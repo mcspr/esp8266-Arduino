@@ -20,7 +20,7 @@ while len(sys.argv):
     if sys.argv[0] == '--end':
         args = [sys.executable, esptool] + fakeargs
         sys.stderr.write("Running: " + " ".join(args) + "\n")
-        if not subprocess.call(args):
+        if subprocess.run(args).returncode != 0:
             sys.exit(1)
         sys.argv.pop(0) # Remove --end
         fakeargs = []
