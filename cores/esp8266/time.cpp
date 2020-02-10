@@ -16,6 +16,7 @@
  *
  */
 
+#include "Arduino.h"
 #include <stdlib.h>
 #include <../include/time.h> // See issue #6714
 #include <sys/time.h>
@@ -46,6 +47,9 @@ extern void sntp_set_daylight(int daylight);
 bool timeshift64_is_set = false;
 static uint64_t timeshift64 = 0;
 
+// persistent storage for configTime / sntp_setservername
+static String configtime_servers[SNTP_MAX_SERVERS];
+
 void tune_timeshift64 (uint64_t now_us)
 {
      timeshift64 = now_us - micros64();
@@ -56,9 +60,12 @@ static void setServer(int id, const char* name_or_ip)
 {
     if (name_or_ip)
     {
-        // per current configuration,
+        // Per current configuration,
         // lwIP can receive an IP address or a fqdn
-        sntp_setservername(id, (char*) name_or_ip);
+        configtime_servers[id] = name_or_ip;
+        // because sntp_setservername simply stores a pointer,
+        // we need to make sure it survives while sntp is enabled
+        sntp_setservername(id, configtime_servers[id].c_str());
     }
 }
 
