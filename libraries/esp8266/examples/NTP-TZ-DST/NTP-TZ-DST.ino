@@ -144,6 +144,8 @@ void showTime() {
   // LwIP v2 is able to list more details about the currently configured SNTP servers
   for (int i = 0; i < SNTP_MAX_SERVERS; i++) {
     IPAddress sntp = *sntp_getserver(i);
+    // Note: when using configTime(), `name` points to a persistent storage.
+    // Both pointer and value may change after configTime is called again.
     const char* name = sntp_getservername(i);
     if (sntp.isSet()) {
       Serial.printf("sntp%d:     ", i);
@@ -213,6 +215,12 @@ void setup() {
   // NTP servers may be overriden by your DHCP server for a more local one
   // (see below)
   configTime(MYTZ, "pool.ntp.org");
+
+  // configTime() does not require a persistent pointer, server value will be cached
+  // (for example, when using EEPROM or FS as a storage for the firmware settings)
+
+  // configTime() can accept up to 3 servers, either IP or domain names
+  //configTime(MYTZ, "pool.ntp.org", "mylocalserver.lan", "192.168.4.1");
 
   // OPTIONAL: disable obtaining SNTP servers from DHCP
   //sntp_servermode_dhcp(0); // 0: disable obtaining SNTP servers from DHCP (enabled by default)
