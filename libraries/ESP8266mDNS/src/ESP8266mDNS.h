@@ -42,7 +42,7 @@
 
 */
 
-enum class MDNSApiVersion { LEA, LEAv2 };
+#pragma once
 
 #include "LEAmDNS.h"            // LEA
 #include "LEAmDNS2Host.h"       // LEAv2       - API updated
