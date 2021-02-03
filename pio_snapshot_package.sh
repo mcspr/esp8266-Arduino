@@ -15,7 +15,7 @@ cat <<EOF > package.json
     "version": "3.0.0-git${version}",
     "repository": {
         "type": "git",
-        "url": "https://github.com/mcspr/arduino-esp8266",
+        "url": "https://github.com/mcspr/esp8266-Arduino",
         "branch": "${version}"
     }
 }

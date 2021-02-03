@@ -4,7 +4,7 @@
     "version": "3.0.0-git7a56c6f4",
     "repository": {
         "type": "git",
-        "url": "https://github.com/mcspr/arduino-esp8266",
+        "url": "https://github.com/mcspr/esp8266-Arduino",
         "branch": "7a56c6f4"
     }
 }
