@@ -1,6 +1,10 @@
 {
     "name": "framework-arduinoespressif8266",
-    "description": "Arduino Wiring-based Framework (ESP8266 Core)",
-    "url": "https://github.com/esp8266/Arduino",
-    "version": "3.0.0-dev"
+    "description": "ESP8266 Core - Current git version snapshot + some patches",
+    "version": "3.0.0-git7a56c6f4",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mcspr/arduino-esp8266",
+        "branch": "7a56c6f4"
+    }
 }
