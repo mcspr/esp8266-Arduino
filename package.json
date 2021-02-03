@@ -1,10 +1,10 @@
 {
     "name": "framework-arduinoespressif8266",
     "description": "ESP8266 Core - Current git version snapshot + some patches",
-    "version": "3.0.0-git7a56c6f4",
+    "version": "3.0.0-gitab5b56bb",
     "repository": {
         "type": "git",
         "url": "https://github.com/mcspr/esp8266-Arduino",
-        "branch": "7a56c6f4"
+        "branch": "ab5b56bb"
     }
 }
