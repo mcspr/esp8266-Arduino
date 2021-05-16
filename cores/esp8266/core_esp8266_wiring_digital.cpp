@@ -237,6 +237,7 @@ void pinMode(uint8_t pin, uint8_t mode) __attribute__ ((weak, alias("__pinMode")
 void digitalWrite(uint8_t pin, uint8_t val) __attribute__ ((weak, alias("__digitalWrite")));
 int digitalRead(uint8_t pin) __attribute__ ((weak, alias("__digitalRead"), nothrow));
 void attachInterrupt(uint8_t pin, voidFuncPtr handler, int mode) __attribute__ ((weak, alias("__attachInterruptBasic")));
+void attachInterrupt(uint8_t pin, voidFuncObj handler, int mode) __attribute__ ((weak, alias("__attachInterruptFunctional")));
 void attachInterruptParam(uint8_t pin, voidFuncParamPtr handler, int mode, void* param) __attribute__((weak, alias("__attachInterruptBasicParam")));
 void detachInterrupt(uint8_t pin) __attribute__ ((weak, alias("__detachInterrupt")));
 
