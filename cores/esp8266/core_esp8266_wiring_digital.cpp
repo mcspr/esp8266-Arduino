@@ -102,108 +102,70 @@ extern int IRAM_ATTR __digitalRead(uint8_t pin) {
   return 0;
 }
 
+} // extern "C"
+
 /*
   GPIO INTERRUPTS
 */
 
-typedef void (*voidFuncPtr)(void);
-typedef void (*voidFuncPtrArg)(void*);
+typedef void (*voidFuncPtr)();
+typedef void (*voidFuncParamPtr)(void*);
+typedef std::function<void()> voidFuncObj;
 
-typedef struct {
-  uint8_t mode;
+struct interrupt_handler_t {
+  interrupt_handler_t(const interrupt_handler_t&) = delete;
+  interrupt_handler_t(interrupt_handler_t&&) = delete;
+
+  interrupt_handler_t() {
+    reset();
+  }
+
+  ~interrupt_handler_t() {
+    reset();
+  }
+
+  void reset() {
+    if (obj) {
+      delete obj;
+      obj = nullptr;
+    }
+    fn = nullptr;
+    mode = 0;
+  }
+
   voidFuncPtr fn;
-  void * arg;
-  bool functional;
-} interrupt_handler_t;
+  voidFuncObj* obj;
+  uint8_t mode;
+};
 
-//duplicate from functionalInterrupt.h keep in sync
-typedef struct InterruptInfo {
-	uint8_t pin;
-	uint8_t value;
-	uint32_t micro;
-} InterruptInfo;
-
-typedef struct {
-	InterruptInfo* interruptInfo;
-	void* functionInfo;
-} ArgStructure;
-
-static interrupt_handler_t interrupt_handlers[16] = { {0, 0, 0, 0}, };
+static interrupt_handler_t interrupt_handlers[16];
 static uint32_t interrupt_reg = 0;
 
-void IRAM_ATTR interrupt_handler(void *arg, void *frame)
-{
-  (void) arg;
-  (void) frame;
-  uint32_t status = GPIE;
-  GPIEC = status;//clear them interrupts
-  uint32_t levels = GPI;
-  if(status == 0 || interrupt_reg == 0) return;
-  ETS_GPIO_INTR_DISABLE();
-  int i = 0;
-  uint32_t changedbits = status & interrupt_reg;
-  while(changedbits){
-    while(!(changedbits & (1 << i))) i++;
-    changedbits &= ~(1 << i);
-    interrupt_handler_t *handler = &interrupt_handlers[i];
-    if (handler->fn && 
-        (handler->mode == CHANGE || 
-         (handler->mode & 1) == !!(levels & (1 << i)))) {
-          // to make ISR compatible to Arduino AVR model where interrupts are disabled
-          // we disable them before we call the client ISR
-          esp8266::InterruptLock irqLock; // stop other interrupts
-          if (handler->functional)
-          {
-              ArgStructure* localArg = (ArgStructure*)handler->arg;
-              if (localArg && localArg->interruptInfo)
-              {
-                  localArg->interruptInfo->pin = i;
-                  localArg->interruptInfo->value = __digitalRead(i);
-                  localArg->interruptInfo->micro = micros();
-              }
-          }
-          if (handler->arg)
-          {
-              ((voidFuncPtrArg)handler->fn)(handler->arg);
-          }
-          else
-          {
-              handler->fn();
-          }
-      }
-  }
-  ETS_GPIO_INTR_ENABLE();
-}
+void IRAM_ATTR interrupt_handler(void * /*arg*/, void * /*frame*/);
 
-extern void cleanupFunctional(void* arg);
-
-static void set_interrupt_handlers(uint8_t pin, voidFuncPtr userFunc, void* arg, uint8_t mode, bool functional)
+static void set_interrupt_handlers(uint8_t pin, voidFuncPtr userFunc, uint8_t mode)
 {
   interrupt_handler_t* handler = &interrupt_handlers[pin];
+  handler->reset();
+
   handler->mode = mode;
   handler->fn = userFunc;
-  if (handler->functional && handler->arg)  // Clean when new attach without detach
-  {
-    cleanupFunctional(handler->arg);
-  }
-  handler->arg = arg;
-  handler->functional = functional;
 }
 
-extern void __attachInterruptFunctionalArg(uint8_t pin, voidFuncPtrArg userFunc, void* arg, int mode, bool functional)
+static void set_interrupt_handlers(uint8_t pin, voidFuncObj&& userFunc, uint8_t mode)
 {
-  // #5780
-  // https://github.com/esp8266/esp8266-wiki/wiki/Memory-Map
-  if ((uint32_t)userFunc >= 0x40200000)
-  {
-    // ISR not in IRAM
-    ::printf((PGM_P)F("ISR not in IRAM!\r\n"));
-    abort();
-  }
+  interrupt_handler_t* handler = &interrupt_handlers[pin];
+  handler->reset();
 
+  handler->mode = mode;
+  handler->obj = new voidFuncObj(std::move(userFunc));
+}
+
+template <typename T>
+void __attachInterrupt(uint8_t pin, T&& userFunc, int mode) {
   if(pin < 16) {
     ETS_GPIO_INTR_DISABLE();
-    set_interrupt_handlers(pin, (voidFuncPtr)userFunc, arg, mode, functional);
+    set_interrupt_handlers(pin, std::forward<T>(userFunc), mode);
     interrupt_reg |= (1 << pin);
     GPC(pin) &= ~(0xF << GPCI);//INT mode disabled
     GPIEC = (1 << pin); //Clear Interrupt for this pin
@@ -213,19 +175,40 @@ extern void __attachInterruptFunctionalArg(uint8_t pin, voidFuncPtrArg userFunc,
   }
 }
 
-extern void __attachInterruptArg(uint8_t pin, voidFuncPtrArg userFunc, void* arg, int mode)
+extern "C" void __attachInterruptFunctional(uint8_t pin, voidFuncObj userFunc, int mode)
 {
-    __attachInterruptFunctionalArg(pin, userFunc, arg, mode, false);
+    // Assuming that .ld script magic had worked, and void() std::function operator()() is placed into IRAM
+    ets_printf("functional\n");
+    __attachInterrupt(pin, std::move(userFunc), mode);
 }
 
-extern void IRAM_ATTR __detachInterrupt(uint8_t pin) {
+extern "C" void __attachInterruptBasic(uint8_t pin, voidFuncPtr userFunc, int mode)
+{
+    // #5780
+    // https://github.com/esp8266/esp8266-wiki/wiki/Memory-Map
+    if ((uint32_t)userFunc >= 0x40200000)
+    {
+        // ISR not in IRAM
+        ::printf((PGM_P)F("ISR not in IRAM!\r\n"));
+        abort();
+    }
+
+    ets_printf("pointer\n");
+    __attachInterrupt(pin, userFunc, mode); 
+}
+
+extern "C" void __attachInterruptBasicParam(uint8_t pin, voidFuncParamPtr userFunc, int mode, void* param) {
+    __attachInterruptFunctional(pin, [param, userFunc]() { userFunc(param); }, mode);
+}
+
+extern "C" void IRAM_ATTR __detachInterrupt(uint8_t pin) {
     if (pin < 16)
     {
         ETS_GPIO_INTR_DISABLE();
         GPC(pin) &= ~(0xF << GPCI);//INT mode disabled
         GPIEC = (1 << pin); //Clear Interrupt for this pin
         interrupt_reg &= ~(1 << pin);
-		set_interrupt_handlers(pin, nullptr, nullptr, 0, false);
+        interrupt_handlers[pin].reset();
         if (interrupt_reg)
         {
             ETS_GPIO_INTR_ENABLE();
@@ -233,19 +216,14 @@ extern void IRAM_ATTR __detachInterrupt(uint8_t pin) {
     }
 }
 
-extern void __attachInterrupt(uint8_t pin, voidFuncPtr userFunc, int mode)
-{
-    __attachInterruptFunctionalArg(pin, (voidFuncPtrArg)userFunc, 0, mode, false);
-}
-
-extern void __resetPins() {
+extern "C" void __resetPins() {
   for (int i = 0; i <= 16; ++i) {
     if (!isFlashInterfacePin(i))
         pinMode(i, INPUT);
   }
 }
 
-extern void initPins() {
+extern "C" void initPins() {
   //Disable UART interrupts
   system_set_os_print(0);
   U0IE = 0;
@@ -254,12 +232,41 @@ extern void initPins() {
   resetPins();
 }
 
-extern void resetPins() __attribute__ ((weak, alias("__resetPins")));
-extern void pinMode(uint8_t pin, uint8_t mode) __attribute__ ((weak, alias("__pinMode")));
-extern void digitalWrite(uint8_t pin, uint8_t val) __attribute__ ((weak, alias("__digitalWrite")));
-extern int digitalRead(uint8_t pin) __attribute__ ((weak, alias("__digitalRead"), nothrow));
-extern void attachInterrupt(uint8_t pin, voidFuncPtr handler, int mode) __attribute__ ((weak, alias("__attachInterrupt")));
-extern void attachInterruptArg(uint8_t pin, voidFuncPtrArg handler, void* arg, int mode) __attribute__((weak, alias("__attachInterruptArg")));
-extern void detachInterrupt(uint8_t pin) __attribute__ ((weak, alias("__detachInterrupt")));
+void resetPins() __attribute__ ((weak, alias("__resetPins")));
+void pinMode(uint8_t pin, uint8_t mode) __attribute__ ((weak, alias("__pinMode")));
+void digitalWrite(uint8_t pin, uint8_t val) __attribute__ ((weak, alias("__digitalWrite")));
+int digitalRead(uint8_t pin) __attribute__ ((weak, alias("__digitalRead"), nothrow));
+void attachInterrupt(uint8_t pin, voidFuncPtr handler, int mode) __attribute__ ((weak, alias("__attachInterruptBasic")));
+void attachInterruptParam(uint8_t pin, voidFuncParamPtr handler, int mode, void* param) __attribute__((weak, alias("__attachInterruptBasicParam")));
+void detachInterrupt(uint8_t pin) __attribute__ ((weak, alias("__detachInterrupt")));
 
-};
+
+#pragma GCC optimize ("O2")
+
+void interrupt_handler(void * /*arg*/, void * /*frame*/)
+{
+  uint32_t status = GPIE;
+  GPIEC = status;//clear them interrupts
+  uint32_t levels = GPI;
+  if(status == 0 || interrupt_reg == 0) return;
+  ETS_GPIO_INTR_DISABLE();
+  int i = 0;
+  uint32_t changedbits = status & interrupt_reg;
+  while (changedbits >= (1UL << i)) {
+    while (!(changedbits & (1UL << i))) {
+      ++i;
+    }
+    const interrupt_handler_t& handler = interrupt_handlers[i];
+    if (handler.mode == CHANGE || (handler.mode & 1) == static_cast<bool>(levels & (1UL << i))) {
+      esp8266::InterruptLock irqLock;
+      if (__builtin_expect(handler.fn != nullptr, 1))
+      {
+          handler.fn();
+      } else {
+          (*handler.obj)();
+      }
+    }
+    ++i;
+  }
+  ETS_GPIO_INTR_ENABLE();
+}
