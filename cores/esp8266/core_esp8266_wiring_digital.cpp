@@ -251,22 +251,29 @@ void interrupt_handler(void * /*arg*/, void * /*frame*/)
   uint32_t levels = GPI;
   if(status == 0 || interrupt_reg == 0) return;
   ETS_GPIO_INTR_DISABLE();
-  int i = 0;
+  uint32_t i = 0;
   uint32_t changedbits = status & interrupt_reg;
-  while (changedbits >= (1UL << i)) {
-    while (!(changedbits & (1UL << i))) {
-      ++i;
-    }
-    const interrupt_handler_t& handler = interrupt_handlers[i];
-    if (handler.mode == CHANGE || (handler.mode & 1) == static_cast<bool>(levels & (1UL << i))) {
-      esp8266::InterruptLock irqLock;
-      if (__builtin_expect(handler.fn != nullptr, 1))
+  while (changedbits) {
+    if (changedbits & 1ul) {
+      const interrupt_handler_t& handler = interrupt_handlers[i];
+
+      auto level = levels & (1UL << i);
+      if ((handler.mode == CHANGE)
+          || ((handler.mode == HIGH) && level)
+          || ((handler.mode == LOW) && !level))
       {
+        // to make ISR compatible to Arduino AVR model where interrupts are disabled
+        // we disable them before we call the user ISR function
+        esp8266::InterruptLock irqLock;
+        if (__builtin_expect(handler.fn != nullptr, 1))
+        {
           handler.fn();
-      } else {
+        } else {
           (*handler.obj)();
+        }
       }
     }
+    changedbits = changedbits >> 1ul;
     ++i;
   }
   ETS_GPIO_INTR_ENABLE();
