@@ -142,6 +142,7 @@ SECTIONS
 
     /* all functional callers are placed in IRAM (including SPI/IRQ callbacks/etc) here */
     *(.text._ZNKSt8functionIF*EE*)  /* std::function<any(...)>::operator()() const */
+    *(.text._ZNSt17_Function_handlerIFvv*9_M_invoke*9_Any_data)  /* std::function<void()>::_M_invoke */
   } >iram1_0_seg :iram1_0_phdr
 
   .irom0.text : ALIGN(4)
