@@ -260,7 +260,7 @@ void interrupt_handler(void * /*arg*/, void * /*frame*/)
 
       auto level = levels & (1UL << i);
       if ((handler.mode == CHANGE)
-        || ((handler->mode & 1) == !!(levels & (1 << i))))
+        || ((handler.mode & 1ul) == !!(level)))
       {
         // to make ISR compatible to Arduino AVR model where interrupts are disabled
         // we disable them before we call the user ISR function
