@@ -184,6 +184,7 @@ uint8_t shiftIn(uint8_t dataPin, uint8_t clockPin, uint8_t bitOrder);
 
 void attachInterrupt(uint8_t pin, void (*)(), int mode);
 void attachInterruptParam(uint8_t pin, void (*)(void*), int mode, void* param);
+void attachInterruptArg(uint8_t pin, void (*)(void*), int mode, void* param);
 void detachInterrupt(uint8_t pin);
 
 void preinit(void);
