@@ -708,7 +708,7 @@ bool TrustAnchors::update(const Certificates &certs) {
   return true;
 }
 
-void clear(TrustAnchors::value_type *ptr, size_t count) {
+void TrustAnchors::clear(TrustAnchors::value_type *ptr, size_t count) {
   for (size_t i = 0; i < count; ++i) {
     brssl::free_ta_contents(&ptr[i]);
   }
