@@ -395,10 +395,14 @@ namespace brssl {
     return xcs;
   }
 
+  void free_certificate(br_x509_certificate *cert) {
+    free((*cert).data);
+  }
+
   void free_certificates(br_x509_certificate *certs, size_t num) {
     if (certs) {
       for (size_t u = 0; u < num; u ++) {
-        free(certs[u].data);
+        free_certificate(&certs[u]);
       }
       free(certs);
     }
@@ -644,38 +648,113 @@ namespace brssl {
   }
 };
 
-
 namespace BearSSL {
+namespace Detail {
 
+template <typename T, typename Value>
+bool PointerHolder<T, Value>::update(T &other) {
+  if (!other._count || !other._ptr) {
+    return false;
+  }
+
+  auto count = other._count + _count;
+  auto *ptr = reinterpret_cast<Value*>(realloc(_ptr, count * value_size));
+  if (!ptr) {
+    return false;
+  }
+
+  memcpy(&_ptr[_count], other._ptr, other._count * value_size);
+
+  _ptr = ptr;
+  _count = count;
+
+  return true;
+}
+
+Certificates::Certificates(const char *cert, size_t length) {
+  size_t count;
+  auto* ptr = brssl::read_certificates(cert, length, &count);
+  if (ptr) {
+      reset(ptr, count);
+  }
+}
+
+void Certificates::clear(Certificates::value_type *ptr, size_t count) {
+  brssl::free_certificates(ptr, count);
+}
+
+bool TrustAnchors::update(const Certificates &certs) {
+  value_type *ptr = reinterpret_cast<value_type *>(realloc(get(), (count() + certs.count()) * sizeof(value_size)));
+  if (!ptr) {
+    return false;
+  }
+
+  for (size_t i = 0; i < certs.count(); ++i) {
+    auto *ta = brssl::certificate_to_trust_anchor(certs[i]);
+    if (ta) {
+      ptr[count() + i] = *ta;
+      free(ta);
+      continue;
+    }
+
+    free(ptr);
+    reset(nullptr, 0);
+
+    return false; // OOM
+  }
+
+  reset(ptr, count() + certs.count());
+
+  return true;
+}
+
+void clear(TrustAnchors::value_type *ptr, size_t count) {
+  for (size_t i = 0; i < count; ++i) {
+    brssl::free_ta_contents(&ptr[i]);
+  }
+  free(ptr);
+}
+
+} // namespace Detail
+
+namespace {
+
+template <typename T>
+bool isRSA(const T& key) {
+  return key && key->key_type == BR_KEYTYPE_RSA;
+}
+
+template <typename T>
+bool isEC(const T& key) {
+  return key && key->key_type == BR_KEYTYPE_EC;
+}
+
+} // namespace
 
 // ----- Public Key -----
 
-PublicKey::PublicKey() {
-  _key = nullptr;
+namespace Detail {
+
+template <>
+void DeleteHelper<brssl::public_key>::operator()(brssl::public_key *ptr) const {
+  brssl::free_public_key(ptr);
 }
 
+} // namespace Detail
+
 PublicKey::PublicKey(const char *pemKey) {
-  _key = nullptr;
   parse(pemKey);
 }
 
 PublicKey::PublicKey(const uint8_t *derKey, size_t derLen) {
-  _key = nullptr;
   parse(derKey, derLen);
 }
 
 PublicKey::PublicKey(Stream &stream, size_t size) {
-  _key = nullptr;
   auto buff = brssl::loadStream(stream, size);
   if (buff) {
     parse(buff, size);
     free(buff);
-  }
-}
-
-PublicKey::~PublicKey() {
-  if (_key) {
-    brssl::free_public_key(_key);
   }
 }
 
@@ -684,70 +763,59 @@ bool PublicKey::parse(const char *pemKey) {
 }
 
 bool PublicKey::parse(const uint8_t *derKey, size_t derLen) {
-  if (_key) {
-    brssl::free_public_key(_key);
-    _key = nullptr;
-  }
-  _key = brssl::read_public_key((const char *)derKey, derLen);
-  return _key ? true : false;
+  _key = nullptr;
+  _key.reset(brssl::read_public_key((const char *)derKey, derLen));
+  return static_cast<bool>(_key);
 }
 
 bool PublicKey::isRSA() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_RSA) {
-    return false;
-  }
-  return true;
+  return BearSSL::isRSA(_key);
 }
 
 bool PublicKey::isEC() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_EC) {
-    return false;
-  }
-  return true;
+  return BearSSL::isEC(_key);
 }
 
 const br_rsa_public_key *PublicKey::getRSA() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_RSA) {
-    return nullptr;
+  if (isRSA()) {
+    return &_key->key.rsa;
   }
-  return &_key->key.rsa;
+
+  return nullptr;
 }
 
 const br_ec_public_key *PublicKey::getEC() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_EC) {
-    return nullptr;
+  if (isEC()) {
+    return &_key->key.ec;
   }
-  return &_key->key.ec;
+
+  return nullptr;
 }
 
 // ----- Private Key -----
 
-PrivateKey::PrivateKey() {
-  _key = nullptr;
+namespace Detail {
+
+template <>
+void DeleteHelper<brssl::private_key>::operator()(brssl::private_key *ptr) const {
+  brssl::free_private_key(ptr);
 }
 
+} // namespace Detail
+
 PrivateKey::PrivateKey(const char *pemKey) {
-  _key = nullptr;
   parse(pemKey);
 }
 
 PrivateKey::PrivateKey(const uint8_t *derKey, size_t derLen) {
-  _key = nullptr;
   parse(derKey, derLen);
 }
 
 PrivateKey::PrivateKey(Stream &stream, size_t size) {
-  _key = nullptr;
   auto buff = brssl::loadStream(stream, size);
   if (buff) {
     parse(buff, size);
     free(buff);
-  }
-}
-
-PrivateKey::~PrivateKey() {
-  if (_key) {
-    brssl::free_private_key(_key);
   }
 }
 
@@ -756,69 +824,59 @@ bool PrivateKey::parse(const char *pemKey) {
 }
 
 bool PrivateKey::parse(const uint8_t *derKey, size_t derLen) {
-  if (_key) {
-    brssl::free_private_key(_key);
-    _key = nullptr;
-  }
-  _key = brssl::read_private_key((const char *)derKey, derLen);
-  return _key ? true : false;
+  _key.reset(brssl::read_private_key((const char *)derKey, derLen));
+  return static_cast<bool>(_key);
 }
 
 bool PrivateKey::isRSA() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_RSA) {
-    return false;
-  }
-  return true;
+  return BearSSL::isRSA(_key);
 }
 
 bool PrivateKey::isEC() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_EC) {
-    return false;
-  }
-  return true;
+  return BearSSL::isEC(_key);
 }
 
 const br_rsa_private_key *PrivateKey::getRSA() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_RSA) {
-    return nullptr;
+  if (isRSA()) {
+    return &_key->key.rsa;
   }
-  return &_key->key.rsa;
+
+  return nullptr;
 }
 
 const br_ec_private_key *PrivateKey::getEC() const {
-  if (!_key || _key->key_type != BR_KEYTYPE_EC) {
-    return nullptr;
+  if (isEC()) {
+    return &_key->key.ec;
   }
-  return &_key->key.ec;
+
+  return nullptr;
 }
 
 // ----- Certificate Lists -----
 
-X509List::X509List() {
-  _count = 0;
-  _cert = nullptr;
-  _ta = nullptr;
+namespace Detail {
+
+template <>
+void DeleteHelper<br_x509_certificate>::operator()(br_x509_certificate *ptr) const {
+  brssl::free_certificate(ptr);
+}
+
+} // namespace Detail
+
+void X509List::clear() {
+  _certs.clear();
+  _tas.clear();
 }
 
 X509List::X509List(const char *pemCert) {
-  _count = 0;
-  _cert = nullptr;
-  _ta = nullptr;
   append(pemCert);
 }
 
-
 X509List::X509List(const uint8_t *derCert, size_t derLen) {
-  _count = 0;
-  _cert = nullptr;
-  _ta = nullptr;
   append(derCert, derLen);
 }
 
 X509List::X509List(Stream &stream, size_t size) {
-  _count = 0;
-  _cert = nullptr;
-  _ta = nullptr;
   auto buff = brssl::loadStream(stream, size);
   if (buff) {
     append(buff, size);
@@ -826,67 +884,33 @@ X509List::X509List(Stream &stream, size_t size) {
   }
 }
 
-X509List::~X509List() {
-  brssl::free_certificates(_cert, _count); // also frees cert
-  for (size_t i = 0; i < _count; i++) {
-    brssl::free_ta_contents(&_ta[i]);
-  }
-  free(_ta);
-}
-
 bool X509List::append(const char *pemCert) {
   return append((const uint8_t *)pemCert, strlen_P(pemCert));
 }
 
 bool X509List::append(const uint8_t *derCert, size_t derLen) {
-  size_t numCerts;
-  br_x509_certificate *newCerts = brssl::read_certificates((const char *)derCert, derLen, &numCerts);
-  if (!newCerts) {
+  auto result = Detail::Certificates((const char *)derCert, derLen);
+  if (!static_cast<bool>(result)) {
     return false;
   }
 
-  // Add in the certificates
-  br_x509_certificate *saveCert = _cert;
-  _cert = (br_x509_certificate*)realloc(_cert, (numCerts + _count) * sizeof(br_x509_certificate));
-  if (!_cert) {
-    free(newCerts);
-    _cert = saveCert;
+  if (!_certs.update(result)) {
     return false;
   }
-  memcpy(&_cert[_count], newCerts, numCerts * sizeof(br_x509_certificate));
-  free(newCerts);
 
-  // Build TAs for each certificate
-  br_x509_trust_anchor *saveTa = _ta;
-  _ta = (br_x509_trust_anchor*)realloc(_ta, (numCerts + _count) * sizeof(br_x509_trust_anchor));
-  if (!_ta) {
-    _ta = saveTa;
+  if (!_tas.update(_certs)) {
     return false;
   }
-  for (size_t i = 0; i < numCerts; i++) {
-    br_x509_trust_anchor *newTa = brssl::certificate_to_trust_anchor(&_cert[_count + i]);
-    if (newTa) {
-      _ta[_count + i ] = *newTa;
-      free(newTa);
-    } else {
-      return false; // OOM
-    }
-  }
-  _count += numCerts;
 
   return true;
 }
 
-ServerSessions::~ServerSessions() {
-  if (_isDynamic && _store != nullptr)
-    delete _store;
-}
-
-ServerSessions::ServerSessions(ServerSession *sessions, uint32_t size, bool isDynamic) :
-  _size(sessions != nullptr ? size : 0),
-  _store(sessions), _isDynamic(isDynamic) {
-    if (_size > 0)
-      br_ssl_session_cache_lru_init(&_cache, (uint8_t*)_store, size * sizeof(ServerSession));
+void ServerSessions::reset(ServerSession *sessions, size_t size) {
+  _size = sessions != nullptr ? size : 0;
+  _store = sessions;
+  if (_size > 0) {
+    br_ssl_session_cache_lru_init(&_cache, (uint8_t*)_store, size * sizeof(ServerSession));
+  }
 }
 
 const br_ssl_session_cache_class **ServerSessions::getCache() {

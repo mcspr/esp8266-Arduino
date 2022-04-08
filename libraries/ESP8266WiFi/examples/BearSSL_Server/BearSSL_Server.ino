@@ -147,7 +147,7 @@ GBEnkz4KpKv7TkHoW+j7F5EMcLcSrUIpyw==
 
 #if defined(USE_CACHE) && defined(DYNAMIC_CACHE)
 // Dynamically allocated cache.
-BearSSL::ServerSessions serverCache(CACHE_SIZE);
+BearSSL::DynamicServerSessions serverCache(CACHE_SIZE);
 #elif defined(USE_CACHE)
 // Statically allocated cache.
 ServerSession store[CACHE_SIZE];
