@@ -1,0 +1,8 @@
+.git-blame-ignore-revs export-ignore
+.gitattributes export-ignore
+.github/** export-ignore
+.gitignore export-ignore
+.gitmodules export-ignore
+ISSUE_TEMPLATE.md export-ignore
+doc/** export-ignore
+package/** export-ignore
