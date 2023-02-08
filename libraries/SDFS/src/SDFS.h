@@ -231,8 +231,8 @@ protected:
     }
 
 
-    static uint8_t _getFlags(fs::OpenMode openMode, fs::AccessMode accessMode) {
-        uint8_t mode = 0;
+    static oflag_t _getFlags(fs::OpenMode openMode, fs::AccessMode accessMode) {
+        oflag_t mode = 0;
         if (openMode & fs::OM_CREATE) {
             mode |= O_CREAT;
         }

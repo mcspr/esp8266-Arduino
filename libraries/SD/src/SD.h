@@ -27,15 +27,15 @@
 // Avoid type ambiguity, force u8 instead of untyped literal
 // ref. #6106 as to why we add APPEND to WRITE
 
-inline constexpr uint8_t SDClassFileRead { FILE_READ };
+inline constexpr oflag_t SDClassFileRead { FILE_READ };
 #undef FILE_READ
 #define FILE_READ SDClassFileRead
 
-inline constexpr uint8_t SDClassFileWrite { FILE_WRITE | O_APPEND };
+inline constexpr oflag_t SDClassFileWrite { FILE_WRITE | O_APPEND };
 #undef FILE_WRITE
 #define FILE_WRITE SDClassFileWrite
 
-static inline constexpr const char* SDClassFileMode(uint8_t mode) {
+static inline constexpr const char* SDClassFileMode(oflag_t mode) {
     bool read = false;
     bool write = false;
 
@@ -77,7 +77,7 @@ public:
         }
     }
 
-    fs::File open(const char *filename, uint8_t mode = FILE_READ) {
+    fs::File open(const char *filename, oflag_t mode = FILE_READ) {
         return SDFS.open(filename, SDClassFileMode(mode));
     }
 
@@ -85,7 +85,7 @@ public:
         return SDFS.open(filename, mode);
     }
 
-    fs::File open(const String &filename, uint8_t mode = FILE_READ) {
+    fs::File open(const String &filename, oflag_t mode = FILE_READ) {
         return open(filename.c_str(), mode);
     }
 
