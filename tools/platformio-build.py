@@ -89,7 +89,10 @@ env.Append(
         "-Wall",
         "-Werror=return-type",
         "-free",
-        "-fipa-pta"
+        "-fipa-pta",
+        "-mflash-rodata-section=.irom",
+        "-mflash-string-section=.irom0.pstr",
+        "-mflash-string-section=.irom.exceptiontext",
     ],
 
     # General options that are passed to the C++ compiler
