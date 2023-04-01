@@ -617,7 +617,7 @@ void WiFiClientSecureCtx::setTimeout(uint16_t timeout) {
 
 void WiFiClientSecureCtx::_set_handshake_done(bool value) {
   _handshake_done = value;
-  _update_runtime_timeout(value? _handshakeTimeout: _timeout);
+  _update_runtime_timeout(value? _timeout: _handshakeTimeout);
 }
 
 bool WiFiClientSecureCtx::_wait_for_handshake() {
