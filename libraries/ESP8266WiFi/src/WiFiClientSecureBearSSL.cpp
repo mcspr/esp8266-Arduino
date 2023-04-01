@@ -80,7 +80,7 @@ void WiFiClientSecureCtx::_clear() {
   _now = 0; // You can override or ensure time() is correct w/configTime
   _ta = nullptr;
   setBufferSizes(16384, 512); // Minimum safe
-  _set_handshake_done(false); // refreshes _timeout
+  _handshake_done = false;
   _recvapp_buf = nullptr;
   _recvapp_len = 0;
   _oom_err = false;
@@ -201,14 +201,21 @@ bool WiFiClientSecureCtx::stop(unsigned int maxWaitMs) {
 }
 
 bool WiFiClientSecureCtx::flush(unsigned int maxWaitMs) {
-  auto savedNormal = _normalTimeout;
+  auto savedTimeout = _timeout;
+  _timeout = maxWaitMs;
+
   auto savedHandshake = _handshakeTimeout;
-  _normalTimeout = maxWaitMs;
   _handshakeTimeout = maxWaitMs;
-  (void) _run_until(BR_SSL_SENDAPP);
-  _normalTimeout = savedNormal;
+
+  auto result = _run_until(BR_SSL_SENDAPP);
+  _timeout = savedTimeout;
   _handshakeTimeout = savedHandshake;
-  return WiFiClient::flush(maxWaitMs);
+
+  if (result != -1 && ctx_present()) {
+    return WiFiClient::flush(maxWaitMs);
+  }
+
+  return false;
 }
 
 int WiFiClientSecureCtx::connect(IPAddress ip, uint16_t port) {
@@ -248,7 +255,7 @@ void WiFiClientSecureCtx::_freeSSL() {
   _recvapp_buf = nullptr;
   _recvapp_len = 0;
   // This connection is toast
-  _set_handshake_done(false); // refreshes _timeout
+  _handshake_done = false;
 }
 
 bool WiFiClientSecureCtx::_clientConnected() {
@@ -463,7 +470,6 @@ size_t WiFiClientSecureCtx::peekBytes(uint8_t *buffer, size_t length) {
     return 0;
   }
 
-  _updateStreamTimeout();
   _startMillis = millis();
   while ((_pollRecvBuffer() < (int)length) && ((millis() - _startMillis) < _timeout)) {
     yield();
@@ -488,8 +494,8 @@ int WiFiClientSecureCtx::_run_until(unsigned target, bool blocking) {
 
   // _run_until() is called prior to inherited read/write methods
   // -> refreshing _timeout here, which is also used by ancestors
-  DEBUG_BSSL("_run_until starts, timeout=%lu\n", _updateStreamTimeout());
-  esp8266::polledTimeout::oneShotMs loopTimeout(_updateStreamTimeout());
+  DEBUG_BSSL("_run_until starts, timeout=%lu\n", _runtimeTimeout);
+  esp8266::polledTimeout::oneShotMs loopTimeout(_runtimeTimeout);
 
   for (int no_work = 0; blocking || no_work < 2;) {
     optimistic_yield(100);
@@ -607,8 +613,24 @@ int WiFiClientSecureCtx::_run_until(unsigned target, bool blocking) {
   return -1;
 }
 
+void WiFiClientSecureCtx::_update_runtime_timeout(unsigned long timeout) {
+  _runtimeTimeout = timeout * 1.2;
+}
+
+void WiFiClientSecureCtx::setTimeout(uint16_t timeout) {
+  WiFiClient::setTimeout(timeout);
+  if (_handshake_done) {
+   _update_runtime_timeout(timeout);
+  }
+}
+
+void WiFiClientSecureCtx::_set_handshake_done(bool value) {
+  _handshake_done = value;
+  _update_runtime_timeout(value? _handshakeTimeout: _timeout);
+}
+
 bool WiFiClientSecureCtx::_wait_for_handshake() {
-  _set_handshake_done(false); // refreshes _timeout
+  _set_handshake_done(false);
   while (!_handshake_done && _clientConnected()) {
     int ret = _run_until(BR_SSL_SENDAPP);
     if (ret < 0) {
@@ -616,7 +638,7 @@ bool WiFiClientSecureCtx::_wait_for_handshake() {
       break;
     }
     if (br_ssl_engine_current_state(_eng) & BR_SSL_SENDAPP) {
-      _set_handshake_done(true); // refreshes _timeout
+      _set_handshake_done(true);
     }
     optimistic_yield(1000);
   }
@@ -1211,8 +1233,6 @@ bool WiFiClientSecureCtx::_connectSSL(const char* hostName) {
   _x509_minimal = nullptr;
   _x509_insecure = nullptr;
   _x509_knownkey = nullptr;
-
-  // _timeout has been refreshed to normal operation as _handshake_done turned to true
 
   return ret;
 }
