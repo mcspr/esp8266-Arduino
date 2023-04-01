@@ -201,17 +201,8 @@ bool WiFiClientSecureCtx::stop(unsigned int maxWaitMs) {
 }
 
 bool WiFiClientSecureCtx::flush(unsigned int maxWaitMs) {
-  auto savedTimeout = _timeout;
-  _timeout = maxWaitMs;
-
-  auto savedHandshake = _handshakeTimeout;
-  _handshakeTimeout = maxWaitMs;
-
-  auto result = _run_until(BR_SSL_SENDAPP);
-  _timeout = savedTimeout;
-  _handshakeTimeout = savedHandshake;
-
-  if (result != -1 && ctx_present()) {
+  const auto result = _run_until(BR_SSL_SENDAPP);
+  if (result != -1 && _engineConnected()) {
     return WiFiClient::flush(maxWaitMs);
   }
 
