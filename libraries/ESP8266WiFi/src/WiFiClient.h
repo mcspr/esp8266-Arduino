@@ -96,6 +96,8 @@ public:
   virtual IPAddress localIP();
   virtual uint16_t  localPort();
 
+  void setTimeout(uint16_t);
+
   static void setLocalPortStart(uint16_t port) { _localPort = port; }
 
   int availableForWrite() override;
