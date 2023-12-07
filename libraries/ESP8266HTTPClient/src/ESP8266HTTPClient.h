@@ -215,7 +215,9 @@ public:
 
     WiFiClient& getStream(void);
     WiFiClient* getStreamPtr(void);
-    template <typename S> int writeToPrint(S* print) [[deprecated]] { return writeToStream(print); }
+    template <typename S>
+    [[deprecated]] 
+    int writeToPrint(S* print) { return writeToStream(print); }
     template <typename S> int writeToStream(S* output);
 
     // In case of chunks = when size cannot be known in advance
