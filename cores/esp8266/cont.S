@@ -18,6 +18,36 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <xtensa/coreasm.h>
+#include <xtensa/corebits.h>
+#include <xtensa/config/specreg.h>
+
+    .begin      literal_prefix .DebugExceptionVector
+    .section    .DebugExceptionVector.text, "ax"
+    .global     _DebugExceptionVector
+    .align      4
+    .literal_position
+_DebugExceptionVector:
+    wsr     a0,  EXCSAVE_1
+    wsr     a1,  EXCSAVE_2
+    movi    a2,  1
+    wsr     a2,  EXCCAUSE
+    call0   __stack_chk_fail_exception
+
+    .end        literal_prefix
+
+    .section    .text
+    .align      4
+    .literal_position
+    .global   __stack_chk_fail_exception
+    .type     __stack_chk_fail_exception, @function
+__stack_chk_fail_exception:
+    rsr     a0,  EXCSAVE_1
+    wsr     a0,  EPC_1
+    esync
+    call0   __stack_chk_fail
+
+
     .section .irom0.text
     .align    4
     .literal_position

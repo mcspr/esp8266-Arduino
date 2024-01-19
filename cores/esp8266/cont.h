@@ -78,6 +78,7 @@ bool cont_can_suspend(cont_t* cont);
 // free, running the routine, then checking the max free
 void cont_repaint_stack(cont_t *cont);
 
+void cont_guard(cont_t* cont);
 
 #ifdef __cplusplus
 }

@@ -89,4 +89,14 @@ void cont_repaint_stack(cont_t *cont)
     }
 }
 
+void cont_guard(cont_t* cont) {
+  __asm__ __volatile__ (
+        "wsr %0, 144         \n\t" // 144 = DBREAKA
+        "movi a3, 0x8000007c \n\t" // [SB aka store bit][LB aka load bit]...23 reserved bits...[7bit MASK]
+                                   // hex(0b10000000000000000000000011111000) -> 0x8000007c
+                                   // where 0b1111100 masks 4 byte range after DBREAKA addr
+        "wsr a3, 160         \n\t" // 160 == DBREAKC
+        :: "r" (&cont->stack_guard1) );
+}
+
 };

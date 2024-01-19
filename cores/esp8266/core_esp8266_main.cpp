@@ -256,6 +256,7 @@ static void loop_wrapper() {
     static bool setup_done = false;
     preloop_update_frequency();
     if(!setup_done) {
+        cont_guard(g_pcont);
         setup();
         setup_done = true;
     }
