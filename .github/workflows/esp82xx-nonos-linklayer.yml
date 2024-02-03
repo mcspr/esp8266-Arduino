@@ -35,19 +35,18 @@ jobs:
       - name: Initialize deploy tools
         env:
           ESP8266_ARDUINO_CORE_DIR: ${{ github.workspace }}/esp8266
-          SSH_DEPLOY_SECRET: ${{ secrets.SSH_DEPLOY_KEY }}
-          SSH_DEPLOY_KEY: ${HOME}/.ssh/deploy_key
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
         run: |
           mkdir ${HOME}/.ssh
 
-          cat "${SSH_DEPLOY_SECRET}" > "${SSH_DEPLOY_KEY}"
-          chmod 600 "${SSH_DEPLOY_KEY}"
+          cat "${SSH_DEPLOY_KEY}" > ${HOME}/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
 
-          echo -ne "Host github.com\n\tHostName github.com\n\tIdentityFile ${SSH_DEPLOY_KEY}\n" > \
+          echo -ne "Host github.com\n\tHostname github.com\n\tIdentityFile ~/.ssh/deploy_key\n" > \
             ${HOME}/.ssh/config
 
-          git config user.email "github-ci-action@github.com"
-          git config user.name "GitHub CI Action"
+          git config user.name "Maxim Prokhorov (CI)"
+          git config user.email "prokhorov.max@outlook.com"
 
       - name: Initialize build environment
         run: |
@@ -58,7 +57,7 @@ jobs:
       - name: Prepare lwip2 builder
         run: |
           pushd ${ESP8266_ARDUINO_CORE_DIR}
-          git remote add deploy ${{ github.repositoryUrl }}
+          git remote add deploy git@github.com:${{ github.repository }}.git
           git switch -c lwip2-rebuild
           git submodule update --init -- tools/sdk/lwip2/builder
           git submodule update --remote --merge -- tools/sdk/lwip2/builder
