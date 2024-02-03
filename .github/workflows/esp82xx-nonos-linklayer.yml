@@ -75,6 +75,7 @@ jobs:
           git add -u
           git commit -m 'Rebuild lwip2 libs'
 
-          git push deploy lwip2-rebuild
+          branch=$(date -Im | tr '[:punct:]' '_')
+          git push deploy lwip2-rebuild:lwip2/build-${branch}
 
           popd
