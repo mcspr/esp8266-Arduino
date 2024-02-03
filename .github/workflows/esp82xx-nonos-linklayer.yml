@@ -22,7 +22,7 @@ jobs:
           path: |
             esp8266/tools/dist
             esp8266/tools/sdk/lwip2/builder/lwip2-src
-          key: ${{ runner.os }}-deploy-${{ hashFiles('esp8266/tools/sdk/lwip2/builder/.git/HEAD', 'esp8266/package/package_esp8266com_index.template.json') }}
+          key: ${{ runner.os }}-deploy-${{ hashFiles('esp8266/tools/sdk/lwip2/builder/patches/*.patch', 'esp8266/tools/sdk/lwip2/builder/makefiles/Makefile.defs', 'esp8266/package/package_esp8266com_index.template.json') }}
 
       - name: Fetch ESP8266 Core
         uses: actions/checkout@v4
