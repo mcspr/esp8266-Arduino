@@ -34,7 +34,6 @@ jobs:
 
       - name: Initialize deploy tools
         env:
-          ESP8266_ARDUINO_CORE_DIR: ${{ github.workspace }}/esp8266
           SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
         run: |
           mkdir ${HOME}/.ssh
@@ -45,8 +44,10 @@ jobs:
           echo -ne "Host github.com\n\tHostname github.com\n\tIdentityFile ~/.ssh/deploy_key\n" > \
             ${HOME}/.ssh/config
 
+          pushd esp8266
           git config user.name "Maxim Prokhorov (CI)"
           git config user.email "prokhorov.max@outlook.com"
+          popd
 
       - name: Initialize build environment
         run: |
@@ -56,7 +57,7 @@ jobs:
 
       - name: Prepare lwip2 builder
         run: |
-          pushd ${ESP8266_ARDUINO_CORE_DIR}
+          pushd esp8266
           git remote add deploy git@github.com:${{ github.repository }}.git
           git switch -c lwip2-rebuild
           git submodule update --init -- tools/sdk/lwip2/builder
