@@ -1,0 +1,87 @@
+name: Build and deploy esp82xx-nonos-linklayer
+
+on:
+  workflow_dispatch:
+
+
+permissions:
+  contents: read
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: deploy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+          fetch-tags: true
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            esp8266/tools/dist
+            esp8266/tools/sdk/lwip2/builder/lwip2-src
+          key: ${{ runner.os }}-deploy-${{ hashFiles('esp8266/tools/sdk/lwip2/builder/.git/HEAD', 'esp8266/package/package_esp8266com_index.template.json') }}
+
+      - name: Fetch ESP8266 Core
+        uses: actions/checkout@v3
+        with:
+          path: esp8266
+          repository: esp8266/Arduino
+          fetch-depth: 1
+          submodules: false
+
+      - name: Initialize deploy tools
+        env:
+          ESP8266_ARDUINO_CORE_DIR: ${{ github.workspace }}/esp8266
+          SSH_DEPLOY_SECRET: ${{ secrets.SSH_DEPLOY_KEY }}
+          SSH_DEPLOY_KEY: ${HOME}/.ssh/deploy_key
+        run: |
+          mkdir ${HOME}/.ssh
+
+          cat "${SSH_DEPLOY_SECRET}" > "${SSH_DEPLOY_KEY}"
+          chmod 600 "${SSH_DEPLOY_KEY}"
+
+          echo -ne "Host github.com\n\tHostName github.com\n\tIdentityFile ${SSH_DEPLOY_KEY}\n" > \
+            ${HOME}/.ssh/config
+
+          git config user.email "github-ci-action@github.com"
+          git config user.name "GitHub CI Action"
+
+      - name: Initialize build environment
+        run: |
+          pushd esp8266/tools
+          python get.py -q
+          popd
+
+      - name: Prepare lwip2 builder
+        run: |
+          pushd ${ESP8266_ARDUINO_CORE_DIR}
+          git remote add deploy ${{ github.repositoryUrl }}
+          git switch -c lwip2-rebuild
+          git submodule update --init -- tools/sdk/lwip2/builder
+          git submodule update --remote --merge -- tools/sdk/lwip2/builder
+          git add -u
+          git commit -m 'Update lwip2 builder'
+          popd
+
+      - name: Build and deploy
+        run: |
+          pushd esp8266
+
+          pushd tools/sdk/lwip2
+          make install
+          popd
+
+          git add -u
+          git commit -m 'Rebuild lwip2 libs'
+
+          git push deploy lwip2-rebuild
+
+          popd
