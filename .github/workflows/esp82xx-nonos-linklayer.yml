@@ -33,12 +33,10 @@ jobs:
           submodules: false
 
       - name: Initialize deploy tools
-        env:
-          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
         run: |
           mkdir ${HOME}/.ssh
 
-          echo -n "${SSH_DEPLOY_KEY}" > ${HOME}/.ssh/deploy_key
+          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ${HOME}/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
           echo -ne "Host github.com\n\tHostname github.com\n\tIdentityFile ~/.ssh/deploy_key\n" > \
