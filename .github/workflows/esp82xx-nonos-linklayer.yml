@@ -13,11 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: deploy
     steps:
-      - uses: actions/checkout@v4
-        with:
-          path: repo
-          fetch-tags: true
-
       - uses: actions/setup-python@v4
         with:
           python-version: '3.x'
@@ -30,7 +25,7 @@ jobs:
           key: ${{ runner.os }}-deploy-${{ hashFiles('esp8266/tools/sdk/lwip2/builder/.git/HEAD', 'esp8266/package/package_esp8266com_index.template.json') }}
 
       - name: Fetch ESP8266 Core
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: esp8266
           repository: esp8266/Arduino
