@@ -57,17 +57,20 @@
 
 #include <stddef.h>
 
+#ifndef HAVE_NONISO
+#include <stdlib_noniso.h>
+#endif
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-    // TODO: #include <stdlib_noniso.h> ?
-    char* itoa(int val, char* s, int radix);
-    char* ltoa(long val, char* s, int radix);
-
+#ifndef HAVE_STRLCAT
     size_t strlcat(char* dst, const char* src, size_t size);
+#endif
+#ifndef HAVE_STRLCPY
     size_t strlcpy(char* dst, const char* src, size_t size);
-
+#endif
 #ifdef __cplusplus
 }
 #endif
