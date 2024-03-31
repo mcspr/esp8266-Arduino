@@ -32,15 +32,15 @@
 
 extern "C" {
 
-char* ltoa(long value, char* result, int base) {
+char* ltoa(long value, char* result, int base) noexcept {
     return itoa((int)value, result, base);
 }
 
-char* ultoa(unsigned long value, char* result, int base) {
+char* ultoa(unsigned long value, char* result, int base) noexcept {
     return utoa((unsigned int)value, result, base);
 }
 
-char * dtostrf(double number, signed char width, unsigned char prec, char *s) {
+char * dtostrf(double number, signed char width, unsigned char prec, char *s) noexcept {
     bool negative = false;
 
     if (isnan(number)) {
@@ -125,7 +125,7 @@ char * dtostrf(double number, signed char width, unsigned char prec, char *s) {
 
 */
 const char* strrstr(const char*__restrict p_pcString,
-                    const char*__restrict p_pcPattern)
+                    const char*__restrict p_pcPattern) noexcept
 {
     const char* pcResult = 0;
 

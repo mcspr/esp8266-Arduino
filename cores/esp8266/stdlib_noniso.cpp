@@ -25,7 +25,7 @@
 // but is smaller by ~800B/flash and ~250B/rodata
 
 // ulltoa fills str backwards and can return a pointer different from str
-char* ulltoa(unsigned long long val, char* str, int slen, unsigned int radix)
+char* ulltoa(unsigned long long val, char* str, int slen, unsigned int radix) noexcept
 {
     str += --slen;
     *str = 0;
@@ -39,7 +39,7 @@ char* ulltoa(unsigned long long val, char* str, int slen, unsigned int radix)
 }
 
 // lltoa fills str backwards and can return a pointer different from str
-char* lltoa (long long val, char* str, int slen, unsigned int radix)
+char* lltoa (long long val, char* str, int slen, unsigned int radix) noexcept
 {
     bool neg;
     if (val < 0)

@@ -26,28 +26,36 @@
 extern "C"{
 #endif
 
-int atoi(const char *s);
+#ifdef __cplusplus
+#define __STDLIB_NONISO_NOEXCEPT noexcept
+#else
+#define __STDLIB_NONISO_NOEXCEPT
+#endif
 
-long atol(const char* s);
+int atoi(const char *s) __STDLIB_NONISO_NOEXCEPT;
 
-double atof(const char* s);
+long atol(const char* s) __STDLIB_NONISO_NOEXCEPT;
 
-char* itoa (int val, char *s, int radix);
+double atof(const char* s) __STDLIB_NONISO_NOEXCEPT;
 
-char* ltoa (long val, char *s, int radix);
+char* itoa (int val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
 
-char* lltoa (long long val, char* str, int slen, unsigned int radix);
+char* ltoa (long val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
 
-char* utoa (unsigned int val, char *s, int radix);
+char* lltoa (long long val, char* str, int slen, unsigned int radix) __STDLIB_NONISO_NOEXCEPT;
 
-char* ultoa (unsigned long val, char *s, int radix);
+char* utoa (unsigned int val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
 
-char* ulltoa (unsigned long long val, char* str, int slen, unsigned int radix);
+char* ultoa (unsigned long val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
 
-char* dtostrf (double val, signed char width, unsigned char prec, char *s);
+char* ulltoa (unsigned long long val, char* str, int slen, unsigned int radix) __STDLIB_NONISO_NOEXCEPT;
+
+char* dtostrf (double val, signed char width, unsigned char prec, char *s) __STDLIB_NONISO_NOEXCEPT;
 
 const char* strrstr(const char*__restrict p_pcString,
-                    const char*__restrict p_pcPattern);
+                    const char*__restrict p_pcPattern) __STDLIB_NONISO_NOEXCEPT;
+
+#undef __STDLIB_NONISO_NOEXCEPT
 
 #ifdef __cplusplus
 } // extern "C"
