@@ -19,8 +19,6 @@
 #include <stdint.h>
 #include <math.h>
 
-#ifndef HAVE_NONISO
-
 #include "stdlib_noniso.h"
 
 static void reverse(char* begin, char* end)
@@ -104,5 +102,3 @@ double atof(const char* s)
     char* tmp;
     return strtod(s, &tmp);
 }
-
-#endif

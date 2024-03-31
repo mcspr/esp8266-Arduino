@@ -55,23 +55,18 @@
 #define D7 7
 #define D8 8
 
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
-#ifndef HAVE_NONISO
 #include <stdlib_noniso.h>
-#endif
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-#ifndef HAVE_STRLCAT
     size_t strlcat(char* dst, const char* src, size_t size);
-#endif
-#ifndef HAVE_STRLCPY
     size_t strlcpy(char* dst, const char* src, size_t size);
-#endif
 #ifdef __cplusplus
 }
 #endif
