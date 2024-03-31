@@ -46,8 +46,6 @@ char* ulltoa (unsigned long long val, char* str, int slen, unsigned int radix);
 
 char* dtostrf (double val, signed char width, unsigned char prec, char *s);
 
-void reverse(char* begin, char* end);
-
 const char* strrstr(const char*__restrict p_pcString,
                     const char*__restrict p_pcPattern);
 

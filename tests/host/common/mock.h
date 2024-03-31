@@ -55,6 +55,7 @@
 #define D7 7
 #define D8 8
 
+#include <stdlib.h>
 #include <stddef.h>
 
 #ifndef HAVE_NONISO
