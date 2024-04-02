@@ -22,8 +22,10 @@
 #ifndef STDLIB_NONISO_H
 #define STDLIB_NONISO_H
 
+#include <stdlib.h>
+
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
 #ifdef __cplusplus
@@ -32,19 +34,9 @@ extern "C"{
 #define __STDLIB_NONISO_NOEXCEPT
 #endif
 
-int atoi(const char *s) __STDLIB_NONISO_NOEXCEPT;
-
-long atol(const char* s) __STDLIB_NONISO_NOEXCEPT;
-
-double atof(const char* s) __STDLIB_NONISO_NOEXCEPT;
-
-char* itoa (int val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
-
 char* ltoa (long val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
 
 char* lltoa (long long val, char* str, int slen, unsigned int radix) __STDLIB_NONISO_NOEXCEPT;
-
-char* utoa (unsigned int val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
 
 char* ultoa (unsigned long val, char *s, int radix) __STDLIB_NONISO_NOEXCEPT;
 
@@ -52,14 +44,13 @@ char* ulltoa (unsigned long long val, char* str, int slen, unsigned int radix) _
 
 char* dtostrf (double val, signed char width, unsigned char prec, char *s) __STDLIB_NONISO_NOEXCEPT;
 
-const char* strrstr(const char*__restrict p_pcString,
-                    const char*__restrict p_pcPattern) __STDLIB_NONISO_NOEXCEPT;
+const char* strrstr (const char*__restrict p_pcString,
+                     const char*__restrict p_pcPattern) __STDLIB_NONISO_NOEXCEPT;
 
 #undef __STDLIB_NONISO_NOEXCEPT
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
-
 
 #endif

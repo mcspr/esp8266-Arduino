@@ -65,6 +65,8 @@
 extern "C"
 {
 #endif
+    char* utoa(unsigned value, char* result, int base);
+    char* itoa(int value, char* result, int base);
     size_t strlcat(char* dst, const char* src, size_t size);
     size_t strlcpy(char* dst, const char* src, size_t size);
 #ifdef __cplusplus

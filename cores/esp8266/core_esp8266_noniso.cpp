@@ -28,19 +28,12 @@
 #include <stdint.h>
 #include <math.h>
 #include <limits>
+
 #include "stdlib_noniso.h"
 
 extern "C" {
 
-char* ltoa(long value, char* result, int base) noexcept {
-    return itoa((int)value, result, base);
-}
-
-char* ultoa(unsigned long value, char* result, int base) noexcept {
-    return utoa((unsigned int)value, result, base);
-}
-
-char * dtostrf(double number, signed char width, unsigned char prec, char *s) noexcept {
+char* dtostrf(double number, signed char width, unsigned char prec, char *s) noexcept {
     bool negative = false;
 
     if (isnan(number)) {
@@ -149,4 +142,4 @@ const char* strrstr(const char*__restrict p_pcString,
     return pcResult;
 }
 
-};
+} // extern "C"
