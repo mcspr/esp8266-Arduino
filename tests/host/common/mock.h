@@ -65,8 +65,8 @@
 extern "C"
 {
 #endif
-    char*  utoa(unsigned value, char* result, int base);
-    char*  itoa(int value, char* result, int base);
+    char* utoa(unsigned value, char* result, int base);
+    char* itoa(int value, char* result, int base);
 #ifndef HAVE_STRLCAT
     size_t strlcat(char* dst, const char* src, size_t size);
 #endif
