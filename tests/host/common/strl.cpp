@@ -1,5 +1,11 @@
 // https://gist.github.com/Fonger/98cc95ac39fbe1a7e4d9
 
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+
+extern "C" {
+
 #ifndef HAVE_STRLCAT
 /*
     '_cups_strlcat()' - Safely concatenate two strings.
@@ -82,3 +88,5 @@ strlcpy(char*       dst, /* O - Destination string */
     return (srclen);
 }
 #endif /* !HAVE_STRLCPY */
+
+} // extern "C"
