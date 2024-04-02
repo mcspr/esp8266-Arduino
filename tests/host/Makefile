@@ -30,6 +30,7 @@ GENHTML  ?= genhtml
 CXXFLAGS += -std=gnu++17
 CFLAGS += -std=gnu17
 
+# 32-bit mode is prefered, but not required
 ifeq ($(FORCE32),1)
 SIZEOFLONG = $(shell echo 'int main(){return sizeof(long);}'|$(CXX) -m32 -x c++ - -o sizeoflong 2>/dev/null && ./sizeoflong; echo $$?; rm -f sizeoflong;)
 ifneq ($(SIZEOFLONG),4)
@@ -50,6 +51,29 @@ endif
 OUTPUT_BINARY := $(BINDIR)/host_tests
 LCOV_DIRECTORY := $(BINDIR)/../lcov
 
+# Core files sometimes override libc functions, check when necessary to hide them
+# TODO proper configure script / other build system?
+ifeq (,$(wildcard ./.have_strlcpy))
+$(shell echo -e '#include <cstring>\nint main(){char a[4]; char b[4]; strlcpy(&a[0], &b[0], sizeof(a)); return 0;}' | \
+	$(CXX) -x c++ - -o .have_strlcpy 2>/dev/null || { echo -e '#!/bin/sh\nexit 1' > .have_strlcpy ; chmod +x .have_strlcpy; })
+endif
+
+$(shell ./.have_strlcpy)
+ifeq ($(.SHELLSTATUS), 0)
+FLAGS += -DHAVE_STRLCPY
+endif
+
+ifeq (,$(wildcard ./.have_strlcat))
+$(shell echo -e '#include <cstring>\nint main(){char a[4]; strlcat(&a[0], "test", sizeof(a)); return 0;}' | \
+	$(CXX) -x c++ - -o .have_strlcat 2>/dev/null || { echo -e '#!/bin/sh\nexit 1' > .have_strlcat ; chmod +x .have_strlcat; })
+endif
+
+$(shell ./.have_strlcat)
+ifeq ($(.SHELLSTATUS), 0)
+FLAGS += -DHAVE_STRLCAT
+endif
+
+# Hide full build commands by default
 ifeq ($(V), 0)
 VERBC   = @echo "C   $@";
 VERBCXX = @echo "C++ $@";
