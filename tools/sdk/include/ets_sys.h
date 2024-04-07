@@ -210,7 +210,7 @@ void ets_timer_setfn(ETSTimer *t, ETSTimerFunc *fn, void *parg);
 void ets_timer_disarm(ETSTimer *a);
 int ets_strncmp(const char *s1, const char *s2, int len);
 int ets_strcmp(const char *s1, const char *s2);
-int ets_strlen(const char *s);
+size_t ets_strlen(const char *s);
 char *ets_strcpy(char *dest, const char *src);
 char *ets_strncpy(char *dest, const char *src, size_t n);
 char *ets_strstr(const char *haystack, const char *needle);
