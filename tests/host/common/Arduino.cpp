@@ -21,6 +21,7 @@
 #include <Schedule.h>
 
 #include <thread>
+#include <stdexcept>
 
 #include <ets_sys.h>
 #include <sched.h>
