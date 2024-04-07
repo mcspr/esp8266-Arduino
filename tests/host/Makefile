@@ -213,7 +213,7 @@ PREINCLUDES := \
 	-include $(common)/c_types.h \
 
 ifneq ($(D),)
-OPTZ=-O0
+OPTZ=-Og
 DEBUG += -DDEBUG_ESP_PORT=Serial
 DEBUG += -DDEBUG_ESP_SSL -DDEBUG_ESP_TLS_MEM -DDEBUG_ESP_HTTP_CLIENT -DDEBUG_ESP_HTTP_SERVER -DDEBUG_ESP_CORE -DDEBUG_ESP_WIFI -DDEBUG_ESP_HTTP_UPDATE -DDEBUG_ESP_UPDATER -DDEBUG_ESP_OTA -DDEBUG_ESP_MDNS
 endif
@@ -255,7 +255,7 @@ all: help
 
 .PHONY: CI
 CI:					# run CI
-	$(MAKE) -f $(MAKEFILE) MKFLAGS="-Werror --coverage" LDFLAGS="--coverage" FORCE32=0 OPTZ=-O0 doCI
+	$(MAKE) -f $(MAKEFILE) MKFLAGS="-Werror --coverage" LDFLAGS="--coverage" FORCE32=0 OPTZ=-Og doCI
 
 .PHONY: doCI
 doCI: build-info $(OUTPUT_BINARY) valgrind test gcov
