@@ -137,6 +137,7 @@ CORE_CPP_FILES := \
 	) \
 	$(abspath $(LIBRARIES_PATH)/SDFS/src/SDFS.cpp) \
 	$(abspath $(LIBRARIES_PATH)/SD/src/SD.cpp) \
+	$(abspath $(LIBRARIES_PATH)/Ticker/src/Ticker.cpp) \
 
 CORE_C_FILES := \
 	$(addprefix $(abspath $(CORE_PATH))/,\
@@ -153,6 +154,7 @@ MOCK_CPP_FILES_COMMON := \
 		sdfs_mock.cpp \
 		WMath.cpp \
 		MockUART.cpp \
+		MockTimer.cpp \
 		MockTools.cpp \
 		MocklwIP.cpp \
 		HostWiring.cpp \
@@ -165,6 +167,7 @@ MOCK_CPP_FILES := $(MOCK_CPP_FILES_COMMON) \
 
 MOCK_CPP_FILES_EMU := $(MOCK_CPP_FILES_COMMON) \
 	$(addprefix $(HOST_COMMON_ABSPATH)/,\
+		MockTask.cpp \
 		ArduinoMain.cpp \
 		ArduinoMainUdp.cpp \
 		ArduinoMainSpiffs.cpp \

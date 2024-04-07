@@ -146,9 +146,18 @@ extern "C"
 {
 #endif
     void uart_new_data(const int uart_nr, uint8_t data);
+    uint8_t mock_read_uart();
 #ifdef __cplusplus
 }
 #endif
+
+namespace mock {
+namespace timer {
+
+void loop();
+
+} // namespac timer
+} // namespace mock
 
 // tcp
 int     mockSockSetup(int sock);
@@ -182,6 +191,15 @@ void mock_stop_spiffs();
 void mock_start_littlefs(const String& fname, size_t size_kb, size_t block_kb = 8,
                          size_t page_b = 512);
 void mock_stop_littlefs();
+
+#ifdef __cplusplus
+#include <chrono>
+void mock_stop_task();
+void mock_loop_task(void (*)(), std::chrono::milliseconds interval, const bool& user_exit);
+#endif
+
+void mock_stop_all();
+
 
 //
 

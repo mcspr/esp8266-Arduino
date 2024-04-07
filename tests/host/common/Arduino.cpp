@@ -15,13 +15,21 @@
 
 #include <sys/time.h>
 #include <unistd.h>
-
-#include <functional>
+#include <stdio.h>
 
 #include <Arduino.h>
 #include <Schedule.h>
 
-static struct timeval gtod0 = { 0, 0 };
+#include <thread>
+
+#include <ets_sys.h>
+#include <sched.h>
+
+namespace {
+
+timeval gtod0 = { 0, 0 };
+
+} // namespace
 
 extern "C" unsigned long millis()
 {
@@ -44,6 +52,11 @@ extern "C" unsigned long micros()
 extern "C" void yield()
 {
     run_scheduled_recurrent_functions();
+    if (!can_yield()) {
+        throw std::runtime_error("should only yield from loop()!");
+    }
+
+    esp_yield();
 }
 
 extern "C" void loop_end()
@@ -52,25 +65,15 @@ extern "C" void loop_end()
     run_scheduled_recurrent_functions();
 }
 
-extern "C" bool can_yield()
-{
-    return true;
-}
-
 extern "C" void optimistic_yield(uint32_t interval_us)
 {
-    (void)interval_us;
-}
+    static auto last = std::chrono::steady_clock::now();
 
-extern "C" void esp_suspend() { }
-
-extern "C" void esp_schedule() { }
-
-extern "C" void esp_yield() { }
-
-extern "C" void esp_delay(unsigned long ms)
-{
-    usleep(ms * 1000);
+    const auto now = std::chrono::steady_clock::now();
+    if (last - now > std::chrono::microseconds{ interval_us }) {
+        last = now;
+        yield();
+    }
 }
 
 bool esp_try_delay(const uint32_t start_ms, const uint32_t timeout_ms, const uint32_t intvl_ms)
@@ -99,7 +102,8 @@ extern "C" void delay(unsigned long ms)
 
 extern "C" void delayMicroseconds(unsigned int us)
 {
-    usleep(us);
+    std::this_thread::sleep_for(
+        std::chrono::microseconds{ us });
 }
 
 #include "cont.h"
