@@ -184,4 +184,5 @@ void mock_loop_task(void (*system_task)(), std::chrono::milliseconds interval,
     }
 
     mock_stop_all();
+    user_task.join();
 }
