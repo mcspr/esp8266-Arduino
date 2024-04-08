@@ -32,13 +32,15 @@
 #include <Arduino.h>
 #include <Schedule.h>
 
+#include <ets_sys.h>
+
+#include <atomic>
 #include <chrono>
 #include <mutex>
 #include <thread>
 #include <functional>
 
-#include <ets_sys.h>
-#include <sched.h>
+#include <semaphore.h>
 
 namespace
 {
