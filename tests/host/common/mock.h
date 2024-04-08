@@ -146,7 +146,6 @@ extern "C"
 {
 #endif
     void    uart_new_data(const int uart_nr, uint8_t data);
-    uint8_t mock_read_uart();
 #ifdef __cplusplus
 }
 #endif

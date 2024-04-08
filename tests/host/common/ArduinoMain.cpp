@@ -79,15 +79,6 @@ static uint8_t mock_read_uart()
     return (ret == 1) ? ch : 0;
 }
 
-static void mock_uart_loop()
-{
-    uint8_t data = mock_read_uart();
-    if (data)
-    {
-        uart_new_data(UART0, data);
-    }
-}
-
 static int mock_start_uart(void)
 {
     struct termios settings;
@@ -136,9 +127,16 @@ static int mock_stop_uart(void)
     return (0);
 }
 
-static void mock_loop_pre()
+static void mock_system_loop()
 {
+    uint8_t data = mock_read_uart();
+    if (data)
+    {
+        uart_new_data(UART0, data);
+    }
+
     check_incoming_udp();
+
     mock::timer::loop();
 }
 
@@ -234,6 +232,7 @@ void control_c(int sig)
         mock_stop_all();
         _exit(1);
     }
+
     user_exit = true;
 }
 
@@ -338,7 +337,7 @@ int main(int argc, char* const argv[])
     millis();
 
     // loops until exit, switching between sys and user tasks
-    mock_loop_task(loop_task, interval, user_exit);
+    mock_loop_task(mock_system_loop, interval, user_exit);
 
     return 0;
 }
