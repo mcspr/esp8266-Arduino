@@ -36,11 +36,10 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <mutex>
 #include <thread>
 #include <functional>
-
-#include <semaphore.h>
 
 namespace
 {
@@ -60,17 +59,29 @@ std::thread user_task;
 std::atomic<bool> user_task_is_done { false };
 std::atomic<bool> scheduled { false };
 
-sem_t sdk_token {};
-sem_t user_token {};
+struct Barrier {
+    std::atomic<int> token { -1 };
+    std::condition_variable cv;
+    std::mutex m;
+};
 
-void notify(sem_t& token)
+constexpr int BARRIER_EXIT = -1;
+
+constexpr int BARRIER_USER = 1;
+constexpr int BARRIER_SYS = 2;
+
+Barrier barrier {};
+
+void arrive(Barrier& b, int value)
 {
-    sem_post(&token);
+    b.token = value;
+    b.cv.notify_all();
 }
 
-void wait(sem_t& token)
+void wait(Barrier& b, int value)
 {
-    sem_wait(&token);
+    std::unique_lock lock { b.m };
+    b.cv.wait(lock, [&]() { return b.token == BARRIER_EXIT || b.token == value; });
 }
 
 ETSTimer delay_timer;
@@ -81,14 +92,14 @@ void mock_task_wrapper()
 
     for (;;)
     {
-        wait(user_token);
+        wait(barrier, BARRIER_USER);
 
         std::call_once(setup_done, setup);
         loop();
         loop_end();
 
         esp_schedule();
-        notify(sdk_token);
+        arrive(barrier, BARRIER_SYS);
 
         if (user_task_is_done)
         {
@@ -106,8 +117,8 @@ extern "C" bool can_yield()
 
 extern "C" void esp_suspend()
 {
-    notify(sdk_token);
-    wait(user_token);
+    arrive(barrier, BARRIER_SYS);
+    wait(barrier, BARRIER_USER);
 }
 
 extern "C" void esp_schedule()
@@ -149,16 +160,12 @@ extern "C" void esp_delay(unsigned long ms)
 void mock_stop_task()
 {
     user_task_is_done = true;
-    notify(sdk_token);
-    notify(user_token);
+    arrive(barrier, BARRIER_EXIT);
 }
 
 void mock_loop_task(void (*system_task)(), std::chrono::milliseconds interval,
                     const bool& user_exit)
 {
-    sem_init(&user_token, 0, 0);
-    sem_init(&sdk_token, 0, 0);
-
     user_task = std::thread(mock_task_wrapper);
 
     esp_schedule();
@@ -173,8 +180,8 @@ void mock_loop_task(void (*system_task)(), std::chrono::milliseconds interval,
         if (scheduled)
         {
             scheduled = false;
-            notify(user_token);
-            wait(sdk_token);
+            arrive(barrier, BARRIER_USER);
+            wait(barrier, BARRIER_SYS);
         }
 
         if (user_exit)
