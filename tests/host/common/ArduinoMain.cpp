@@ -112,19 +112,26 @@ static int mock_start_uart(void)
 static int mock_stop_uart(void)
 {
     if (!restore_tty)
+    {
         return 0;
+    }
+
     if (!isatty(STDIN))
     {
         perror("restoring tty: isatty(STDIN)");
         return -1;
     }
+
     if (tcsetattr(STDIN, TCSANOW, &initial_settings) < 0)
     {
         perror("restoring tty: tcsetattr(STDIN)");
         return -1;
     }
-    printf("\e[?25h");  // show cursor
-    return (0);
+
+    const char show_cursor[] = "\e[?25h";
+    write(STDOUT_FILENO, &show_cursor[0], sizeof(show_cursor));
+
+    return 0;
 }
 
 static void mock_system_loop()
@@ -228,7 +235,8 @@ void control_c(int sig)
 
     if (user_exit)
     {
-        fprintf(stderr, MOCK "stuck, killing\n");
+        const char stuck[] = MOCK "stuck, killing\n";
+        write(STDERR_FILENO, &stuck[0], sizeof(stuck));
         mock_stop_all();
         _exit(1);
     }
