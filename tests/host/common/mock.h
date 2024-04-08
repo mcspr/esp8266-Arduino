@@ -145,7 +145,7 @@ extern "C"
 extern "C"
 {
 #endif
-    void    uart_new_data(const int uart_nr, uint8_t data);
+    void uart_new_data(const int uart_nr, uint8_t data);
 #ifdef __cplusplus
 }
 #endif
