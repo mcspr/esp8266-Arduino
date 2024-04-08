@@ -145,19 +145,21 @@ extern "C"
 extern "C"
 {
 #endif
-    void uart_new_data(const int uart_nr, uint8_t data);
+    void    uart_new_data(const int uart_nr, uint8_t data);
     uint8_t mock_read_uart();
 #ifdef __cplusplus
 }
 #endif
 
-namespace mock {
-namespace timer {
+namespace mock
+{
+namespace timer
+{
 
-void loop();
+    void loop();
 
-} // namespac timer
-} // namespace mock
+}  // namespace timer
+}  // namespace mock
 
 // tcp
 int     mockSockSetup(int sock);
@@ -199,7 +201,6 @@ void mock_loop_task(void (*)(), std::chrono::milliseconds interval, const bool& 
 #endif
 
 void mock_stop_all();
-
 
 //
 

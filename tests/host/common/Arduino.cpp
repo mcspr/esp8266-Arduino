@@ -26,11 +26,12 @@
 #include <ets_sys.h>
 #include <sched.h>
 
-namespace {
+namespace
+{
 
 timeval gtod0 = { 0, 0 };
 
-} // namespace
+}  // namespace
 
 extern "C" unsigned long millis()
 {
@@ -53,7 +54,8 @@ extern "C" unsigned long micros()
 extern "C" void yield()
 {
     run_scheduled_recurrent_functions();
-    if (!can_yield()) {
+    if (!can_yield())
+    {
         throw std::runtime_error("should only yield from loop()!");
     }
 
@@ -71,7 +73,8 @@ extern "C" void optimistic_yield(uint32_t interval_us)
     static auto last = std::chrono::steady_clock::now();
 
     const auto now = std::chrono::steady_clock::now();
-    if (last - now > std::chrono::microseconds{ interval_us }) {
+    if (last - now > std::chrono::microseconds { interval_us })
+    {
         last = now;
         yield();
     }
@@ -103,8 +106,7 @@ extern "C" void delay(unsigned long ms)
 
 extern "C" void delayMicroseconds(unsigned int us)
 {
-    std::this_thread::sleep_for(
-        std::chrono::microseconds{ us });
+    std::this_thread::sleep_for(std::chrono::microseconds { us });
 }
 
 #include "cont.h"

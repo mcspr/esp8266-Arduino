@@ -40,7 +40,8 @@
 #include <ets_sys.h>
 #include <sched.h>
 
-namespace {
+namespace
+{
 
 // TODO ets_task(), ets_post(), etc.? afaik, no real messages are passed between tasks, just execution requests
 // TODO only -std=c++20 has nice barrier api and jthread. using semaphore.h for now and plain threads
@@ -57,23 +58,27 @@ std::thread user_task;
 std::atomic<bool> user_task_is_done { false };
 std::atomic<bool> scheduled { false };
 
-sem_t sdk_token{};
-sem_t user_token{};
+sem_t sdk_token {};
+sem_t user_token {};
 
-void notify(sem_t& token) {
+void notify(sem_t& token)
+{
     sem_post(&token);
 }
 
-void wait(sem_t& token) {
+void wait(sem_t& token)
+{
     sem_wait(&token);
 }
 
 ETSTimer delay_timer;
 
-void mock_task_wrapper() {
+void mock_task_wrapper()
+{
     std::once_flag setup_done;
 
-    for (;;) {
+    for (;;)
+    {
         wait(user_token);
 
         std::call_once(setup_done, setup);
@@ -83,74 +88,95 @@ void mock_task_wrapper() {
         esp_schedule();
         notify(sdk_token);
 
-        if (user_task_is_done) {
+        if (user_task_is_done)
+        {
             break;
         }
     }
 }
 
-} // namespace
+}  // namespace
 
 extern "C" bool can_yield()
 {
     return std::this_thread::get_id() == user_task.get_id();
 }
 
-extern "C" void esp_suspend() {
+extern "C" void esp_suspend()
+{
     notify(sdk_token);
     wait(user_token);
 }
 
-extern "C" void esp_schedule() {
+extern "C" void esp_schedule()
+{
     scheduled = true;
 }
 
-extern "C" void esp_yield() {
+extern "C" void esp_yield()
+{
     esp_schedule();
     esp_suspend();
 }
 
 extern "C" void esp_delay(unsigned long ms)
 {
-    if (ms) {
-        ets_timer_setfn(&delay_timer, [](void*) { esp_schedule(); }, nullptr);
+    if (ms)
+    {
+        ets_timer_setfn(
+            &delay_timer,
+            [](void*)
+            {
+                esp_schedule();
+            },
+            nullptr);
         ets_timer_arm_new(&delay_timer, ms, 0, 1);
-    } else {
+    }
+    else
+    {
         esp_schedule();
     }
 
     esp_suspend();
-    if (ms) {
+    if (ms)
+    {
         ets_timer_disarm(&delay_timer);
     }
 }
 
-void mock_stop_task() {
+void mock_stop_task()
+{
     user_task_is_done = true;
     notify(sdk_token);
     notify(user_token);
 }
 
-void mock_loop_task(void (*system_task)(), std::chrono::milliseconds interval, const bool& user_exit) {
+void mock_loop_task(void (*system_task)(), std::chrono::milliseconds interval,
+                    const bool& user_exit)
+{
     sem_init(&user_token, 0, 0);
     sem_init(&sdk_token, 0, 0);
 
     user_task = std::thread(mock_task_wrapper);
 
     esp_schedule();
-    for (;;) {
+    for (;;)
+    {
         system_task();
-        if (interval.count() > 0) {
+        if (interval.count() > 0)
+        {
             std::this_thread::sleep_for(interval);
         }
 
-        if (scheduled) {
+        if (scheduled)
+        {
             scheduled = false;
             notify(user_token);
             wait(sdk_token);
         }
 
-        if (user_exit) {
+        if (user_exit)
+        {
             break;
         }
     }

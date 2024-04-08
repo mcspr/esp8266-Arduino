@@ -79,9 +79,11 @@ static uint8_t mock_read_uart()
     return (ret == 1) ? ch : 0;
 }
 
-static void mock_uart_loop() {
+static void mock_uart_loop()
+{
     uint8_t data = mock_read_uart();
-    if (data) {
+    if (data)
+    {
         uart_new_data(UART0, data);
     }
 }
@@ -209,9 +211,11 @@ void make_fs_filename(String& name, const char* fspath, const char* argv0)
         name = argv0;
 }
 
-void loop_impl() {
+void loop_impl()
+{
     static bool setup_done { false };
-    if (!setup_done) {
+    if (!setup_done)
+    {
         setup();
         setup_done = true;
     }
@@ -235,7 +239,7 @@ void control_c(int sig)
 
 int main(int argc, char* const argv[])
 {
-    auto interval = std::chrono::milliseconds{ 1 };
+    auto interval = std::chrono::milliseconds { 1 };
     blocking_uart = false;  // global
 
     signal(SIGINT, control_c);
@@ -268,7 +272,7 @@ int main(int argc, char* const argv[])
             ignore_sigint = true;
             break;
         case 'I':
-            interval = std::chrono::milliseconds{ atoll(optarg) };
+            interval = std::chrono::milliseconds { atoll(optarg) };
             break;
         case 'S':
             spiffs_kb = atoi(optarg);
