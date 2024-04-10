@@ -258,7 +258,7 @@ int main(int argc, char* const argv[])
 
     for (;;)
     {
-        int n = getopt_long(argc, argv, "hlcbvTiI:S:s:L:P:1", options, NULL);
+        int n = getopt_long(argc, argv, "hlcbvTi:I:S:s:L:P:1", options, NULL);
         if (n < 0)
             break;
         switch (n)
