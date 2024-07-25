@@ -24,17 +24,23 @@
   Modified 8 May 2015 by Hristo Gochkov (proper post and file upload handling)
 */
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cassert>
+#include <cstdint>
+#include <cstdlib>
+#include <cstdio>
+
 #include "pgmspace.h"
 #include "debug.h"
 #include "StackThunk.h"
+
 #include <ets_sys.h>
 #include <umm_malloc/umm_malloc.h>
 #include <umm_malloc/umm_heap_select.h>
 
 extern "C" {
+
+extern void yield();
+extern bool can_yield();
 
 uint32_t *stack_thunk_ptr = NULL;
 uint32_t *stack_thunk_top = NULL;
@@ -44,6 +50,25 @@ uint32_t stack_thunk_refcnt = 0;
 /* Largest stack usage seen in the wild at  6120 */
 #define _stackSize (6200/4)
 #define _stackPaint 0xdeadbeef
+
+void stack_thunk_yield()
+{
+    if (can_yield()) {
+        uint32_t tmp;
+        register uint32_t* save __asm__("a3") = stack_thunk_save;
+
+        __asm__ __volatile__ (
+            "mov.n %0, a1\n\t"
+            "mov.n a1, %1\n\t"
+        : "=r"(tmp) : "r"(save) : "memory");
+
+        yield();
+
+        __asm__ __volatile__ (
+            "mov.n a1, %0\n\t"
+        :: "r"(tmp) : "memory");
+    }
+}
 
 /* Add a reference, and allocate the stack if necessary */
 void stack_thunk_add_ref()
