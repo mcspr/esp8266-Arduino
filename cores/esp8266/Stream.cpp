@@ -20,8 +20,9 @@
  parsing functions based on TextFinder library by Michael Margolis
  */
 
-#include <Arduino.h>
-#include <Stream.h>
+#include "Arduino.h"
+#include "Stream.h"
+#include "StreamString.h"
 
 #define PARSE_TIMEOUT 1000  // default number of milli-seconds to wait
 #define NO_SKIP_CHAR  1  // a magic char not found in a valid ASCII numeric field
@@ -254,34 +255,45 @@ String Stream::readString() {
 
 String Stream::readStringUntil(char terminator) {
     String ret;
-    int c = timedRead();
-    while(c >= 0 && c != terminator) {
-        ret += (char) c;
-        c = timedRead();
-    }
+
+    S2Stream s2s(ret);
+    sendUntil(s2s, terminator, _timeout);
+
     return ret;
 }
 
 String Stream::readStringUntil(const char* terminator, uint32_t untilTotalNumberOfOccurrences) {
     String ret;
-    int c;
+    if (!untilTotalNumberOfOccurrences) {
+        return ret;
+    }
+
+    const size_t termLen = strlen_P(terminator);
+    if (!termLen) {
+        return ret;
+    }
+
+    S2Stream s2s(ret);
     uint32_t occurrences = 0;
-    size_t termLen = strlen(terminator);
-    size_t termIndex = 0;
-    size_t index = 0;
+    const size_t tailLen = termLen - 1;
 
-    while ((c = timedRead()) > 0) {
-        ret += (char) c;
-        index++;
+    for (;;) {
+        sendUntil(s2s, terminator[tailLen], _timeout);
+        if (s2s.getLastSendReport() != Stream::Report::Success) {
+            break;
+        }
 
-        if (terminator[termIndex] == c) {
-            if (++termIndex == termLen && ++occurrences == untilTotalNumberOfOccurrences) {
-                // don't include terminator in returned string
-                ret.remove(index - termIndex, termLen);
-                break;
+        if ((ret.length() >= tailLen)
+         && ((0 == tailLen) || (0 == memcmp_P(terminator, ret.end() - tailLen, tailLen))))
+        {
+            ++occurrences;
+        }
+
+        if (untilTotalNumberOfOccurrences == occurrences) {
+            if (tailLen) {
+                ret.remove(ret.length() - tailLen);
             }
-        } else {
-            termIndex = 0;
+            break;
         }
     }
 

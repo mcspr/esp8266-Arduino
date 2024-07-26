@@ -512,6 +512,31 @@ TEST_CASE("Issue #2736 - StreamString SSO fix", "[core][StreamString]")
     REQUIRE(s == "{\"message\"");
 }
 
+TEST_CASE("Issue #9005 - StreamString for Stream->String conversion", "[core][StreamString]")
+{
+    const char buffer[] =
+        "this is a test string"
+        "\r\n"
+        "delimited as if it was a http request"
+        "\r\n"
+        "\r\n";
+
+    StreamString input;
+    input.print(buffer);
+    REQUIRE(input == buffer);
+
+    String out = input.readStringUntil("\r\n");
+    REQUIRE(21 == out.length());
+    REQUIRE(out == "this is a test string");
+
+    out = input.readStringUntil("\r\n");
+    REQUIRE(37 == out.length());
+    REQUIRE(out == "delimited as if it was a http request");
+
+    out = input.readStringUntil("\r\n");
+    REQUIRE(0 == out.length());
+}
+
 TEST_CASE("Strings with NULs", "[core][String]")
 {
     // The following should never be done in a real app! This is only to inject 0s in the middle of
