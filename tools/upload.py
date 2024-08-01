@@ -67,14 +67,10 @@ exit_code = 0
 
 try:
     esptool.main(cmdline)
-except Exception as e:
-    sys.stderr.write(f"\nA fatal upload.py error occurred: {repr(e)}")
-    exit_code = 2
-
-if erase_file:
-    try:
+    if erase_file:
         os.remove(erase_file)
-    except:
-        pass
+except Exception as e:
+    sys.stderr.write(f"\nA fatal upload.py error occurred: {repr(e)}\n")
+    exit_code = 2
 
 sys.exit(exit_code)
