@@ -467,11 +467,11 @@ extern "C"
     }
 };
 
-size_t uart_peek_available(uart_t* uart)
+size_t uart_peek_available(uart_t*)
 {
     return 0;
 }
-const char* uart_peek_buffer(uart_t* uart)
+const char* uart_peek_buffer(uart_t*)
 {
     return nullptr;
 }

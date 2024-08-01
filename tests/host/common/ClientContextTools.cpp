@@ -38,7 +38,7 @@
 #include <netdb.h>  // gethostbyname
 
 err_t dns_gethostbyname_addrtype(const char* hostname, ip_addr_t* addr, dns_found_callback, void*,
-                                 u8 type)
+                                 u8 /* type */)
 {
     auto* hbn = gethostbyname(hostname);
     if (!hbn)

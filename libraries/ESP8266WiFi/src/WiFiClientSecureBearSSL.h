@@ -31,7 +31,12 @@
 
 namespace BearSSL {
 
+class WiFiClientSecure;
+
 class WiFiClientSecureCtx : public WiFiClient {
+  private:
+    friend class WiFiClientSecure;
+
   public:
     WiFiClientSecureCtx();
     WiFiClientSecureCtx(const WiFiClientSecureCtx &rhs) = delete;
@@ -51,21 +56,26 @@ class WiFiClientSecureCtx : public WiFiClient {
     int connect(const char* name, uint16_t port) override;
 
     uint8_t connected() override;
+
+    size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     size_t write_P(PGM_P buf, size_t size) override;
-    size_t write(Stream& stream); // Note this is not virtual
-    int read(uint8_t *buf, size_t size) override;
-    int read(char *buf, size_t size) { return read((uint8_t*)buf, size); }
-    int available() override;
-    int read() override;
+
     int peek() override;
     size_t peekBytes(uint8_t *buffer, size_t length) override;
-    bool flush(unsigned int maxWaitMs);
-    bool stop(unsigned int maxWaitMs);
-    void flush() override { (void)flush(0); }
-    void stop() override { (void)stop(0); }
 
+    int read() override;
+    int read(uint8_t *buf, size_t size) override;
+    int read(char *buf, size_t size) { return read((uint8_t*)buf, size); }
+
+    int available() override;
     int availableForWrite() override;
+
+    void flush() override { (void)flush(0); }
+    bool flush(unsigned int maxWaitMs);
+
+    void stop() override { (void)stop(0); }
+    bool stop(unsigned int maxWaitMs);
 
     // Allow sessions to be saved/restored automatically to a memory area
     void setSession(Session *session) { _session = session; }
@@ -263,25 +273,36 @@ class WiFiClientSecure : public WiFiClient {
     std::unique_ptr<WiFiClient> clone() const override { return std::unique_ptr<WiFiClient>(new WiFiClientSecure(*this)); }
 
     uint8_t status() override { return _ctx->status(); }
+
     int connect(IPAddress ip, uint16_t port) override { return _ctx->connect(ip, port); }
     int connect(const String& host, uint16_t port) override { return _ctx->connect(host, port); }
     int connect(const char* name, uint16_t port) override { return _ctx->connect(name, port); }
 
     uint8_t connected() override { return _ctx->connected(); }
+
+    size_t write(uint8_t b) override { return _ctx->write(b); }
     size_t write(const uint8_t *buf, size_t size) override { return _ctx->write(buf, size); }
     size_t write_P(PGM_P buf, size_t size) override { return _ctx->write_P(buf, size); }
+
     size_t write(const char *buf) { return write((const uint8_t*)buf, strlen(buf)); }
     size_t write_P(const char *buf) { return write_P((PGM_P)buf, strlen_P(buf)); }
-    size_t write(Stream& stream) /* Note this is not virtual */ { return _ctx->write(stream); }
-    int read(uint8_t *buf, size_t size) override { return _ctx->read(buf, size); }
-    int available() override { return _ctx->available(); }
-    int availableForWrite() override { return _ctx->availableForWrite(); }
-    int read() override { return _ctx->read(); }
+
+    [[deprecated("use Stream::sendAll(client, ...)")]]
+    size_t write(Stream& stream);
+
     int peek() override { return _ctx->peek(); }
     size_t peekBytes(uint8_t *buffer, size_t length) override { return _ctx->peekBytes(buffer, length); }
+
+    int read(uint8_t *buf, size_t size) override { return _ctx->read(buf, size); }
+    int read() override { return _ctx->read(); }
+
+    int available() override { return _ctx->available(); }
+    int availableForWrite() override { return _ctx->availableForWrite(); }
+
     bool flush(unsigned int maxWaitMs) { return _ctx->flush(maxWaitMs); }
-    bool stop(unsigned int maxWaitMs) { return _ctx->stop(maxWaitMs); }
     void flush() override { (void)flush(0); }
+
+    bool stop(unsigned int maxWaitMs) { return _ctx->stop(maxWaitMs); }
     void stop() override { (void)stop(0); }
 
     IPAddress remoteIP() override { return _ctx->remoteIP(); }

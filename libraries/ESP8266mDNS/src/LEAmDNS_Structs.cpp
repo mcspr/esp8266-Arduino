@@ -1746,15 +1746,6 @@ namespace MDNSImplementation
     MDNSResponder::stcMDNSServiceQuery::stcAnswer::findIP4Address(
         const IPAddress& p_IPAddress) const
     {
-        return (stcIP4Address*)(((const stcAnswer*)this)->findIP4Address(p_IPAddress));
-    }
-
-    /*
-        MDNSResponder::stcMDNSServiceQuery::stcAnswer::findIP4Address
-    */
-    MDNSResponder::stcMDNSServiceQuery::stcAnswer::stcIP4Address*
-    MDNSResponder::stcMDNSServiceQuery::stcAnswer::findIP4Address(const IPAddress& p_IPAddress)
-    {
         stcIP4Address* pIP4Address = m_pIP4Addresses;
         while (pIP4Address)
         {
@@ -1765,6 +1756,15 @@ namespace MDNSImplementation
             pIP4Address = pIP4Address->m_pNext;
         }
         return pIP4Address;
+    }
+
+    /*
+        MDNSResponder::stcMDNSServiceQuery::stcAnswer::findIP4Address
+    */
+    MDNSResponder::stcMDNSServiceQuery::stcAnswer::stcIP4Address*
+    MDNSResponder::stcMDNSServiceQuery::stcAnswer::findIP4Address(const IPAddress& p_IPAddress)
+    {
+        return (stcIP4Address*)(((const stcAnswer*)this)->findIP4Address(p_IPAddress));
     }
 
     /*

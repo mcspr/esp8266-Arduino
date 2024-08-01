@@ -65,16 +65,20 @@ public:
   virtual std::unique_ptr<WiFiClient> clone() const;
 
   virtual uint8_t status();
+
   virtual int connect(IPAddress ip, uint16_t port) override;
   virtual int connect(const char *host, uint16_t port) override;
   virtual int connect(const String& host, uint16_t port);
+
   virtual size_t write(uint8_t) override;
   virtual size_t write(const uint8_t *buf, size_t size) override;
   virtual size_t write_P(PGM_P buf, size_t size);
-  [[ deprecated("use stream.sendHow(client...)") ]]
+
+  [[deprecated("use Stream::sendAll(client, ...)")]]
   size_t write(Stream& stream);
 
   virtual int available() override;
+
   virtual int read() override;
   virtual int read(uint8_t* buf, size_t size) override;
   int read(char* buf, size_t size);
@@ -84,10 +88,13 @@ public:
   size_t peekBytes(char *buffer, size_t length) {
     return peekBytes((uint8_t *) buffer, length);
   }
+
   virtual void flush() override { (void)flush(0); } // wait for all outgoing characters to be sent, output buffer should be empty after this call
-  virtual void stop() override { (void)stop(0); }
   bool flush(unsigned int maxWaitMs);
+
+  virtual void stop() override { (void)stop(0); }
   bool stop(unsigned int maxWaitMs);
+
   virtual uint8_t connected() override;
   virtual operator bool() override;
 
