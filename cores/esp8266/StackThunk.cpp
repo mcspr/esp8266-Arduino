@@ -27,14 +27,19 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "pgmspace.h"
+
 #include "debug.h"
 #include "StackThunk.h"
+
+#include <pgmspace.h>
 #include <ets_sys.h>
+
 #include <umm_malloc/umm_malloc.h>
 #include <umm_malloc/umm_heap_select.h>
 
 extern "C" {
+
+extern void optimistic_yield(uint32_t);
 
 uint32_t *stack_thunk_ptr = NULL;
 uint32_t *stack_thunk_top = NULL;
@@ -148,6 +153,11 @@ void stack_thunk_fatal_smashing()
 {
     ets_printf("FATAL ERROR: BSSL stack smashing detected\n");
     __stack_chk_fail();
+}
+
+void stack_thunk_yield()
+{
+    optimistic_yield(10000);
 }
 
 }
