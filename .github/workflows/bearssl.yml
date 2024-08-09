@@ -93,4 +93,4 @@ jobs:
           branch=$(date -Im | tr '[:punct:]' '_')
           git push deploy bearssl-rebuild:bearssl/build-${branch}
 
-          popd esp8266
+          popd
