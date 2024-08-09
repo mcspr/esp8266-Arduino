@@ -88,7 +88,6 @@ jobs:
           pushd esp8266
 
           git add -u -- tools/sdk/lib/
-          git diff --cached --exit-code || echo "
           git commit -m 'Rebuild bearssl libs'
 
           branch=$(date -Im | tr '[:punct:]' '_')
