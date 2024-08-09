@@ -82,7 +82,7 @@ jobs:
           popd
 
       - name: Deploy
-        if: steps.build.outputs.deploy == "true"
+        if: steps.build.outputs.deploy == 'true'
         run: |
           pushd esp8266
 
