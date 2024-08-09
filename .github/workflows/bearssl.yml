@@ -73,7 +73,7 @@ jobs:
           make install
           popd
 
-          if [[ -n $(git diff --exit-code -- tools/sdk/lib/) ]]; then
+          if [[ -n $(git diff --exit-code -- tools/sdk/) ]]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -84,7 +84,7 @@ jobs:
         run: |
           pushd esp8266
 
-          git add -u -- tools/sdk/lib/
+          git add -u -- tools/sdk/lib/ tools/sdk/include/
           git commit -m 'Rebuild bearssl libs'
 
           branch=$(date -Im | tr '[:punct:]' '_')
