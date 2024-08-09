@@ -51,6 +51,7 @@ jobs:
         run: |
           pushd esp8266/tools
           python get.py -q
+          echo "$(readlink -f xtensa-lx106-elf/bin)" >> $GITHUB_PATH
           popd
 
       - name: Prepare bearssl builder
@@ -70,7 +71,7 @@ jobs:
           pushd esp8266
 
           pushd tools/sdk/ssl/bearssl
-          make clean
+          make CONF=esp8266 clean
           make CONF=esp8266
           cp esp8266/libbearssl.a ../../lib/
           popd
