@@ -1,0 +1,96 @@
+name: Build and deploy bearssl
+
+on:
+  workflow_dispatch:
+
+
+permissions:
+  contents: read
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: deploy
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            esp8266/tools/dist
+            esp8266/tools/sdk/ssl/bearssl/
+          key: ${{ runner.os }}-deploy-${{ hashFiles('.gitmodules', 'esp8266/package/package_esp8266com_index.template.json') }}
+
+      - name: Fetch ESP8266 Core
+        uses: actions/checkout@v4
+        with:
+          path: esp8266
+          repository: esp8266/Arduino
+          fetch-depth: 1
+          submodules: false
+
+      - name: Initialize deploy tools
+        run: |
+          mkdir ${HOME}/.ssh
+
+          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ${HOME}/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          echo -ne "Host github.com\n\tHostname github.com\n\tIdentityFile ~/.ssh/deploy_key\n" > \
+            ${HOME}/.ssh/config
+
+          pushd esp8266
+          git config user.name "Maxim Prokhorov (CI)"
+          git config user.email "prokhorov.max@outlook.com"
+          popd
+
+      - name: Initialize build environment
+        run: |
+          pushd esp8266/tools
+          python get.py -q
+          popd
+
+      - name: Prepare bearssl builder
+        run: |
+          pushd esp8266
+          git remote add deploy git@github.com:${{ github.repository }}.git
+          git switch -c bearssl-rebuild
+          git submodule update --init -- tools/sdk/ssl/bearssl
+          git submodule update --remote --merge -- tools/sdk/ssl/bearssl
+          git add -u
+          git commit -m 'Update bearssl builder'
+          popd
+
+      - name: Build
+        id: build
+        run: |
+          pushd esp8266
+
+          pushd tools/sdk/ssl/bearssl
+          make clean
+          make CONF=esp8266
+          cp esp8266/libbearssl.a ../../lib/
+          popd
+
+          if [[ -n $(git diff --exit-code -- tools/sdk/lib/) ]]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          popd
+
+      - name: Deploy
+        if: steps.build.outputs.deploy == "true"
+        run: |
+          pushd esp8266
+
+          git add -u -- tools/sdk/lib/
+          git diff --cached --exit-code || echo "
+          git commit -m 'Rebuild bearssl libs'
+
+          branch=$(date -Im | tr '[:punct:]' '_')
+          git push deploy bearssl-rebuild:bearssl/build-${branch}
+
+          popd esp8266
