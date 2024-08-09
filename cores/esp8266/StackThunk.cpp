@@ -150,4 +150,9 @@ void stack_thunk_fatal_smashing()
     __stack_chk_fail();
 }
 
+void stack_thunk_yield()
+{
+    optimistic_yield(10000);
+}
+
 }
