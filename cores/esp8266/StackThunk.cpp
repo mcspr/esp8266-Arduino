@@ -43,7 +43,10 @@ extern void optimistic_yield(uint32_t);
 
 uint32_t *stack_thunk_ptr = NULL;
 uint32_t *stack_thunk_top = NULL;
+
 uint32_t *stack_thunk_save = NULL;  /* Saved A1 while in BearSSL */
+uint32_t *stack_thunk_yield_save = NULL;  /* Saved A1 when yielding from within BearSSL */
+
 uint32_t stack_thunk_refcnt = 0;
 
 /* Largest stack usage seen in the wild at  6120 */
@@ -155,9 +158,32 @@ void stack_thunk_fatal_smashing()
     __stack_chk_fail();
 }
 
-void stack_thunk_yield()
-{
-    optimistic_yield(10000);
-}
+void stack_thunk_yield();
+asm(
+    ".section     .text.stack_thunk_yield,\"ax\",@progbits\n\t"
+    ".literal_position\n\t"
+    ".align       4\n\t"
+    ".global      stack_thunk_yield\n\t"
+    ".type        stack_thunk_yield, @function\n\t"
+    "\n"
+"stack_thunk_yield:\n\t"
+    "addi         a1, a1, -16\n\t"
+    "s32i.n       a0, a1, 12\n\t"
+    "call0        can_yield\n\t"
+    "beqz.n       a2, .Lstack_thunk_yield_pass\n\t"
+    "movi         a2, stack_thunk_yield_save\n\t"
+    "s32i.n       a1, a2, 0\n\t"
+    "movi         a2, stack_thunk_save\n\t"
+    "l32i.n       a1, a2, 0\n\t"
+    "call0        yield\n\t"
+    "movi         a2, stack_thunk_yield_save\n\t"
+    "l32i.n       a1, a2, 0\n\t"
+    "\n"
+".Lstack_thunk_yield_pass:\n\t"
+    "l32i.n       a0, a1, 12\n\t"
+    "addi         a1, a1, 16\n\t"
+    "ret.n\n\t"
+    ".size stack_thunk_yield, .-stack_thunk_yield\n\t"
+);
 
 }
