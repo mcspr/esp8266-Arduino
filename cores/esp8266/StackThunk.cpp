@@ -158,6 +158,7 @@ void stack_thunk_fatal_smashing()
     __stack_chk_fail();
 }
 
+/* Called within bearssl code instead of optimistic_yield(...) */
 void stack_thunk_yield();
 asm(
     ".section     .text.stack_thunk_yield,\"ax\",@progbits\n\t"
@@ -167,19 +168,23 @@ asm(
     ".type        stack_thunk_yield, @function\n\t"
     "\n"
 "stack_thunk_yield:\n\t"
+/* Keep the original caller */
     "addi         a1, a1, -16\n\t"
     "s32i.n       a0, a1, 12\n\t"
-    "call0        can_yield\n\t"
-    "beqz.n       a2, .Lstack_thunk_yield_pass\n\t"
+/* Swap bearssl <-> cont stacks */
     "movi         a2, stack_thunk_yield_save\n\t"
     "s32i.n       a1, a2, 0\n\t"
     "movi         a2, stack_thunk_save\n\t"
     "l32i.n       a1, a2, 0\n\t"
-    "call0        yield\n\t"
+/* optimistic_yield(10000) without extra l32r */
+    "movi         a2, 0x10\n\t"
+    "addmi        a2, a2, 0x2700\n\t"
+    "call0        optimistic_yield\n\t"
+/* Swap bearssl <-> cont stacks, again */
     "movi         a2, stack_thunk_yield_save\n\t"
     "l32i.n       a1, a2, 0\n\t"
     "\n"
-".Lstack_thunk_yield_pass:\n\t"
+/* Restore caller */
     "l32i.n       a0, a1, 12\n\t"
     "addi         a1, a1, 16\n\t"
     "ret.n\n\t"
