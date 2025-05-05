@@ -154,7 +154,7 @@ SECTIONS
 
   } >iram1_0_seg :iram1_0_phdr
 
-  .irom0.text : ALIGN(4)
+  .irom0.text (READONLY) : ALIGN(4)
   {
     _irom0_text_start = ABSOLUTE(.);
 

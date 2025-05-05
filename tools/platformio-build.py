@@ -172,6 +172,7 @@ env.Append(
         )
     )
 )
+env.Depends("$BUILD_DIR/$PROGNAME$PROGSUFFIX", join(FRAMEWORK_DIR, "bootloaders", "eboot", "eboot.elf"))
 
 #
 # SDK
