@@ -21,7 +21,7 @@ OBJDUMP := $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-objdump
 
 INC += -I../../tools/sdk/include -I../../tools/sdk/uzlib/src
 
-CFLAGS += -std=gnu17
+CFLAGS += -std=gnu23
 
 CFLAGS += -Os -fcommon -g -Wall -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mno-text-section-literals -ffunction-sections -fdata-sections -free -fipa-pta
 
@@ -47,7 +47,7 @@ tinfgzip.o: $(UZLIB_PATH)/tinfgzip.c $(UZLIB_PATH)/uzlib.h $(UZLIB_PATH)/uzlib_c
 	$(CC) $(CFLAGS) -c -o tinfgzip.o $(UZLIB_PATH)/tinfgzip.c
 
 $(APP_AR): $(TARGET_OBJ_PATHS) tinflate.o tinfgzip.o Makefile
-	$(AR) cru $@ $^
+	$(AR) Dcr $@ $^
 
 $(APP_OUT): $(APP_AR) eboot.ld | Makefile
 	$(LD) $(LD_SCRIPT) $(LDFLAGS) -Wl,--start-group -Wl,--sort-common $(APP_AR) -Wl,--end-group -o $@

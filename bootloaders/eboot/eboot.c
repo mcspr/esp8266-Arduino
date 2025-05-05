@@ -51,6 +51,9 @@ extern void ets_wdt_enable(uint32_t mode, uint32_t arg1, uint32_t arg2);
 */
 extern uint32_t ets_wdt_disable(void);
 
+/* See tools/sdk/ld/eagle.rom.addr.v6.ld */
+extern int rom_memcmp (const void *, const void *, size_t);
+
 int print_version(const uint32_t flash_addr)
 {
     uint32_t ver;
@@ -205,7 +208,7 @@ int copy_raw(const uint32_t src_addr,
             if (SPIRead(daddr, buffer2, buffer_size)) {
                 return 4;
             }
-            if (memcmp(buffer, buffer2, buffer_size)) {
+            if (rom_memcmp(buffer, buffer2, buffer_size)) {
                 return 9;
             }
         } else {
@@ -216,7 +219,7 @@ int copy_raw(const uint32_t src_addr,
                 if (SPIRead(daddr, buffer2, buffer_size)) {
                     return 4;
                 }
-                if (!memcmp(buffer2, buffer, buffer_size)) {
+                if (!rom_memcmp(buffer2, buffer, buffer_size)) {
                     ets_putc('B'); // Note we skipped the bootloader in output
                     skip = true;   // And skip erase/write
                 }
