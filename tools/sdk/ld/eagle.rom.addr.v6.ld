@@ -200,9 +200,14 @@ PROVIDE ( mem_malloc = 0x40001b40 );
 PROVIDE ( mem_realloc = 0x40001c6c );
 PROVIDE ( mem_trim = 0x40001a14 );
 PROVIDE ( mem_zalloc = 0x40001c58 );
+/* renamed to rom_... for gcc14 update
 PROVIDE ( memcmp = 0x4000dea8 );
 PROVIDE ( memcpy = 0x4000df48 );
 PROVIDE ( memmove = 0x4000e04c );
+*/
+PROVIDE ( rom_memcmp = 0x4000dea8 );
+PROVIDE ( rom_memcpy = 0x4000df48 );
+PROVIDE ( rom_memmove = 0x4000e04c );
 PROVIDE ( memset = 0x4000e190 );
 PROVIDE ( multofup = 0x400031c0 );
 PROVIDE ( pbkdf2_sha1 = 0x4000b840 );
@@ -321,12 +326,20 @@ PROVIDE ( slc_to_host_chain_recycle = 0x40005f10 );
 PROVIDE ( software_reset = 0x4000264c );
 PROVIDE ( spi_flash_attach = 0x40004644 );
 PROVIDE ( srand = 0x400005f0 );
+/* renamed to rom_... for gcc14 update
 PROVIDE ( strcmp = 0x4000bdc8 );
 PROVIDE ( strcpy = 0x4000bec8 );
 PROVIDE ( strlen = 0x4000bf4c );
 PROVIDE ( strncmp = 0x4000bfa8 );
 PROVIDE ( strncpy = 0x4000c0a0 );
 PROVIDE ( strstr = 0x4000e1e0 );
+*/
+PROVIDE ( rom_strcmp = 0x4000bdc8 );
+PROVIDE ( rom_strcpy = 0x4000bec8 );
+PROVIDE ( rom_strlen = 0x4000bf4c );
+PROVIDE ( rom_strncmp = 0x4000bfa8 );
+PROVIDE ( rom_strncpy = 0x4000c0a0 );
+PROVIDE ( rom_strstr = 0x4000e1e0 );
 PROVIDE ( timer_insert = 0x40002c64 );
 PROVIDE ( uartAttach = 0x4000383c );
 PROVIDE ( uart_baudrate_detect = 0x40003924 );
