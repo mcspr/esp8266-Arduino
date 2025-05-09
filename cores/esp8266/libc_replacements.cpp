@@ -97,7 +97,7 @@ int IRAM_ATTR _write_r(struct _reent* r, int file, char *ptr, int len) {
 
 int IRAM_ATTR _putc_r(struct _reent* r, int c, FILE* file) __attribute__((weak));
 
-int IRAM_ATTR _putc_r(struct _reent* r, int c, FILE* file) {
+int _putc_r(struct _reent* r, int c, FILE* file) {
     (void) r;
     if (file->_file == STDOUT_FILENO) {
       ets_putc(c);

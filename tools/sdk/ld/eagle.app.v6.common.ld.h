@@ -247,6 +247,13 @@ SECTIONS
     *(.rodata._ZZ*__PRETTY_FUNCTION__)
     *(.rodata._ZZ*__func__)
 
+    /* __FUNCTION__ global statics */
+    *(.rodata.*__builtin_FILEstr*)
+    *(.rodata.*__builtin_FUNCTIONstr*)
+    *(.rodata.*__func__str*)
+    *(.rodata.*__FUNCTION__str*)
+    *(.rodata.*__PRETTY_FUNCTION__str*)
+
     /* std::* exception strings, in their own section to allow string coalescing */
     *(.irom.exceptiontext .rodata.exceptiontext)
     *(.rodata.*__exception_what__*) /* G++ seems to throw out templatized section attributes */
