@@ -280,7 +280,7 @@ public:
 
     // return a pointer to available data buffer (size = peekAvailable())
     // semantic forbids any kind of read() before calling peekConsume()
-    const char* peekBuffer()
+    const void* peekBuffer()
     {
         return _inbuf;
     }
