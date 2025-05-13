@@ -34,64 +34,64 @@ class StreamNull: public Stream
 public:
 
     // Print
-    virtual size_t write(uint8_t) override
+    size_t write(uint8_t) override
     {
         return 1;
     }
 
-    virtual size_t write(const uint8_t* buffer, size_t size) override
+    size_t write(const uint8_t* buffer, size_t size) override
     {
         (void)buffer;
         (void)size;
         return size;
     }
 
-    virtual int availableForWrite() override
+    int availableForWrite() override
     {
         return std::numeric_limits<int16_t>::max();
     }
 
     // Stream
-    virtual int available() override
+    int available() override
     {
         return 0;
     }
 
-    virtual int read() override
+    int read() override
     {
         return -1;
     }
 
-    virtual int peek() override
+    int peek() override
     {
         return -1;
     }
 
-    virtual size_t readBytes(char* buffer, size_t len) override
+    size_t readBytes(char* buffer, size_t len) override
     {
         (void)buffer;
         (void)len;
         return 0;
     }
 
-    virtual int read(uint8_t* buffer, size_t len) override
+    int read(uint8_t* buffer, size_t len) override
     {
         (void)buffer;
         (void)len;
         return 0;
     }
 
-    virtual bool outputCanTimeout() override
+    bool outputCanTimeout() override
     {
         return false;
     }
 
-    virtual bool inputCanTimeout() override
+    bool inputCanTimeout() override
     {
         return false;
     }
 
-    virtual ssize_t streamRemaining() override
+    ssize_t streamRemaining() override
     {
         return 0;
     }
@@ -113,34 +113,34 @@ public:
     StreamZero(char zero = 0): _zero(zero) { }
 
     // Stream
-    virtual int available() override
+    int available() override
     {
         return std::numeric_limits<int16_t>::max();
     }
 
-    virtual int read() override
+    int read() override
     {
         return _zero;
     }
 
-    virtual int peek() override
+    int peek() override
     {
         return _zero;
     }
 
-    virtual size_t readBytes(char* buffer, size_t len) override
+    size_t readBytes(char* buffer, size_t len) override
     {
         memset(buffer, _zero, len);
         return len;
     }
 
-    virtual int read(uint8_t* buffer, size_t len) override
+    int read(uint8_t* buffer, size_t len) override
     {
         memset((char*)buffer, _zero, len);
         return len;
     }
 
-    virtual ssize_t streamRemaining() override
+    ssize_t streamRemaining() override
     {
         return std::numeric_limits<int16_t>::max();
     }
@@ -160,7 +160,11 @@ protected:
     size_t _peekPointer = 0;
 
 public:
-    StreamConstPtr(const String&& string) = delete; // prevents passing String temporary, use ctor(buffer,size) if you know what you are doing
+    // prevents passing String temporary, use ctor(buffer,size) if you know what you are doing
+    StreamConstPtr(const String&&) = delete;
+    StreamConstPtr(String&&) = delete;
+
+    // reference arbitrary pointer
     StreamConstPtr(const String& string): _buffer(string.c_str()), _size(string.length()), _byteAddressable(true) { }
     StreamConstPtr(const char* buffer, size_t size): _buffer(buffer), _size(size), _byteAddressable(__byteAddressable(buffer)) { }
     StreamConstPtr(const uint8_t* buffer, size_t size): _buffer((const char*)buffer), _size(size), _byteAddressable(__byteAddressable(buffer)) { }
@@ -173,24 +177,24 @@ public:
     }
 
     // Stream
-    virtual int available() override
+    int available() override
     {
         return peekAvailable();
     }
 
-    virtual int read() override
+    int read() override
     {
         // valid with dram, iram and flash
         return _peekPointer < _size ? pgm_read_byte(&_buffer[_peekPointer++]) : -1;
     }
 
-    virtual int peek() override
+    int peek() override
     {
         // valid with dram, iram and flash
         return _peekPointer < _size ? pgm_read_byte(&_buffer[_peekPointer]) : -1;
     }
 
-    virtual size_t readBytes(char* buffer, size_t len) override
+    size_t readBytes(char* buffer, size_t len) override
     {
         if (_peekPointer >= _size)
         {
@@ -202,33 +206,33 @@ public:
         return cpylen;
     }
 
-    virtual int read(uint8_t* buffer, size_t len) override
+    int read(uint8_t* buffer, size_t len) override
     {
         return readBytes((char*)buffer, len);
     }
 
-    virtual ssize_t streamRemaining() override
+    ssize_t streamRemaining() override
     {
         return _size;
     }
 
     // peekBuffer
-    virtual bool hasPeekBufferAPI() const override
+    bool hasPeekBufferAPI() const override
     {
-        return _byteAddressable;
+        return true;
     }
 
-    virtual size_t peekAvailable() override
+    size_t peekAvailable() override
     {
         return _peekPointer < _size ? _size - _peekPointer : 0;
     }
 
-    virtual const char* peekBuffer() override
+    const void* peekBuffer() override
     {
         return _peekPointer < _size ? _buffer + _peekPointer : nullptr;
     }
 
-    virtual void peekConsume(size_t consume) override
+    void peekConsume(size_t consume) override
     {
         _peekPointer += consume;
     }

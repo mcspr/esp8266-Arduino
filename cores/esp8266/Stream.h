@@ -134,7 +134,7 @@ class Stream: public Print {
         // semantic forbids any kind of ::read()
         //     - after calling peekBuffer()
         //     - and before calling peekConsume()
-        virtual const char* peekBuffer () { return nullptr; }
+        virtual const void* peekBuffer () { return nullptr; }
 
         // consumes bytes after peekBuffer() use
         // (then ::read() is allowed)

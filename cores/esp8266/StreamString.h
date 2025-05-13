@@ -39,17 +39,18 @@ public:
 
     S2Stream(String* string, int peekPointer = -1) : string(string), peekPointer(peekPointer) { }
 
-    virtual int available() override
+    // Stream
+    int available() override
     {
         return string->length();
     }
 
-    virtual int availableForWrite() override
+    int availableForWrite() override
     {
         return std::numeric_limits<int16_t>::max();
     }
 
-    virtual int read() override
+    int read() override
     {
         if (peekPointer < 0)
         {
@@ -71,12 +72,12 @@ public:
         return -1;
     }
 
-    virtual size_t write(uint8_t data) override
+    size_t write(uint8_t data) override
     {
         return string->concat((char)data);
     }
 
-    virtual int read(uint8_t* buffer, size_t len) override
+    int read(uint8_t* buffer, size_t len) override
     {
         if (peekPointer < 0)
         {
@@ -99,12 +100,12 @@ public:
         return l;
     }
 
-    virtual size_t write(const uint8_t* buffer, size_t len) override
+    size_t write(const uint8_t* buffer, size_t len) override
     {
         return string->concat((const char*)buffer, len) ? len : 0;
     }
 
-    virtual int peek() override
+    int peek() override
     {
         if (peekPointer < 0)
         {
@@ -121,29 +122,28 @@ public:
         return -1;
     }
 
-    virtual void flush() override
+    void flush() override
     {
         // nothing to do
     }
 
-    virtual bool inputCanTimeout() override
+    bool inputCanTimeout() override
     {
         return false;
     }
 
-    virtual bool outputCanTimeout() override
+    bool outputCanTimeout() override
     {
         return false;
     }
 
-    //// Stream's peekBufferAPI
-
-    virtual bool hasPeekBufferAPI() const override
+    // peekBufferAPI
+    bool hasPeekBufferAPI() const override
     {
         return true;
     }
 
-    virtual size_t peekAvailable()
+    size_t peekAvailable()
     {
         if (peekPointer < 0)
         {
@@ -152,7 +152,7 @@ public:
         return string->length() - peekPointer;
     }
 
-    virtual const char* peekBuffer() override
+    const void* peekBuffer() override
     {
         if (peekPointer < 0)
         {
@@ -165,7 +165,7 @@ public:
         return nullptr;
     }
 
-    virtual void peekConsume(size_t consume) override
+    void peekConsume(size_t consume) override
     {
         if (peekPointer < 0)
         {
@@ -179,7 +179,7 @@ public:
         }
     }
 
-    virtual ssize_t streamRemaining() override
+    ssize_t streamRemaining() override
     {
         return peekPointer < 0 ? string->length() : string->length() - peekPointer;
     }

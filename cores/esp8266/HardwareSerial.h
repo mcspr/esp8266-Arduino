@@ -136,14 +136,14 @@ public:
         return uart_peek_char(_uart);
     }
 
-    virtual bool hasPeekBufferAPI () const override
+    bool hasPeekBufferAPI () const override
     {
         return true;
     }
 
     // return a pointer to available data buffer (size = available())
     // semantic forbids any kind of read() before calling peekConsume()
-    const char* peekBuffer () override
+    const void* peekBuffer () override
     {
         return uart_peek_buffer(_uart);
     }

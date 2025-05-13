@@ -22,6 +22,17 @@
 #include <Arduino.h>
 #include <StreamDev.h>
 
+namespace {
+
+// 'last' is memchr result, always in advance of current
+size_t last_consume(size_t previous, const void* last, const void* current)
+{
+    return std::min(previous, static_cast<size_t>(
+        reinterpret_cast<intptr_t>(last) - reinterpret_cast<intptr_t>(current)));
+}
+
+} // namespace
+
 size_t Stream::sendGeneric(Stream* to, const ssize_t len, const int readUntilChar,
                            const esp8266::polledTimeout::oneShotFastMs::timeType timeoutMs)
 {
@@ -132,18 +143,18 @@ Stream::SendGenericPeekBuffer(Print* to, const ssize_t len, const int readUntilC
         }
         if (w)
         {
-            const char* directbuf = peekBuffer();
+            const auto* directbuf = peekBuffer();
             bool        foundChar = false;
             if (readUntilChar >= 0)
             {
-                const char* last = (const char*)memchr(directbuf, readUntilChar, w);
+                const auto* last = memchr(directbuf, readUntilChar, w);
                 if (last)
                 {
-                    w         = std::min((size_t)(last - directbuf), w);
+                    w = last_consume(w, last, directbuf);
                     foundChar = true;
                 }
             }
-            if (w && ((w = to->write(directbuf, w))))
+            if (w && ((w = to->write((const uint8_t*)directbuf, w))))
             {
                 peekConsume(w);
                 written += w;
