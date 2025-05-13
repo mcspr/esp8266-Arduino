@@ -354,6 +354,7 @@ function install_arduino_cli()
         exit 2
     esac
 
+    mkdir -p $(dirname $path)
     cp -v arduino-cli $path
     chmod +x $path
 
