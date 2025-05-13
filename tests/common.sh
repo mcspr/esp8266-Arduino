@@ -113,6 +113,7 @@ function print_sketch_info()
     local build_rem=$2
 
     local testcnt=0
+    local cnt=0
 
     for sketch in $ESP8266_ARDUINO_SKETCHES; do
         testcnt=$(( ($testcnt + 1) % $build_mod ))
@@ -120,7 +121,23 @@ function print_sketch_info()
             continue  # Not ours to do
         fi
 
-        echo $sketch
+        local sketchdir
+        sketchdir=$(dirname $sketch)
+
+        local sketchdirname
+        sketchdirname=$(basename $sketchdir)
+
+        local sketchname
+        sketchname=$(basename $sketch)
+
+        local skip
+        skip=$(skip_sketch "$sketch" "$sketchname" "$sketchdir" "$sketchdirname")
+        if [ -n "$skip" ]; then
+            continue # Should be skipped / cannot be built
+        fi
+
+        cnt=$(( $cnt + 1 ))
+        printf '%2d\t%s\n' "$cnt" "$sketch"
     done
 }
 
@@ -140,9 +157,10 @@ function build_sketches()
     local core_path=$1
     local cli_path=$2
     local library_path=$3
-    local build_mod=$4
-    local build_rem=$5
-    local lwip=$6
+    local lwip=$4
+    local build_mod=$5
+    local build_rem=$6
+    local build_cnt=$7
 
     local build_dir="$cache_dir"/build
     mkdir -p "$build_dir"
@@ -163,8 +181,9 @@ function build_sketches()
 
     print_size_info_header >"$cache_dir"/size.log
 
-    local mk_clean_core=1
+    local clean_core=1
     local testcnt=0
+    local cnt=0
 
     for sketch in $ESP8266_ARDUINO_SKETCHES; do
         testcnt=$(( ($testcnt + 1) % $build_mod ))
@@ -172,44 +191,9 @@ function build_sketches()
             continue  # Not ours to do
         fi
 
-        # mkbuildoptglobals.py is optimized around the Arduino IDE 1.x
-        # behaviour. One way the CI differs from the Arduino IDE is in the
-        # handling of core and caching core. With the Arduino IDE, each sketch
-        # has a private copy of core and contributes to a core cache. With the
-        # CI, there is one shared copy of core for all sketches. When global
-        # options are used, the shared copy of core and cache are removed before
-        # and after the build.
-        #
         # Do we need a clean core build? $build_dir/core/* cannot be shared
         # between sketches when global options are present.
-        if [ -s ${sketch}.globals.h ]; then
-            mk_clean_core=1
-        fi
-        if [ $mk_clean_core -ne 0 ]; then
-            rm -rf "$build_dir"/core/*
-        else
-            # Remove sketch specific files from ./core/ between builds.
-            rm -rf "$build_dir/core/build.opt" "$build_dir"/core/*.ino.globals.h
-        fi
-
-        if [ -e ${build_dir}/core/*.a ]; then
-            # We need to preserve the build.options.json file and replace the last .ino
-            # with this sketch's ino file, or builder will throw everything away.
-            jq '."sketchLocation" = "'$sketch'"' $build_dir/build.options.json \
-                > "$build_dir"/build.options.json.tmp
-            mv "$build_dir"/build.options.json.tmp "$build_dir"/build.options.json
-            if [ $mk_clean_core -ne 0 ]; then
-                # Hack workaround for CI not handling core rebuild for global options
-                rm ${build_dir}/core/*.a
-            fi
-        fi
-
-        if [ -s ${sketch}.globals.h ]; then
-            # Set to cleanup core at the start of the next build.
-            mk_clean_core=1
-        else
-            mk_clean_core=0
-        fi
+        clean_core=$(arduino_mkbuildoptglobals_cleanup "$clean_core" "$build_dir" "$sketch")
 
         # Clear out the last built sketch, map, elf, bin files, but leave the compiled
         # objects in the core and libraries available for use so we don't need to rebuild
@@ -235,7 +219,15 @@ function build_sketches()
             continue
         fi
 
-        echo ::group::Building $sketch
+        cnt=$(( $cnt + 1 ))
+        if [ $build_cnt != 0 ] ; then
+            if [ $build_cnt != $cnt ] ; then
+                continue
+            fi
+            build_cnt=0
+        fi
+
+        echo ::group::Building $cnt $sketch
         echo "$build_cmd $sketch"
 
         local result
@@ -243,7 +235,7 @@ function build_sketches()
             && result=0 || result=1
 
         if [ $result -ne 0 ]; then
-            echo ::error::Build failed for $sketch
+            echo ::error::Build failed for $cnt $sketch
             cat "$cache_dir/build.log"
             echo ::endgroup::
             return $result
@@ -455,18 +447,65 @@ function arduino_lwip_menu_option()
     esac
 }
 
+# mkbuildoptglobals.py is optimized around the Arduino IDE 1.x
+# behaviour. One way the CI differs from the Arduino IDE is in the
+# handling of core and caching core. With the Arduino IDE, each sketch
+# has a private copy of core and contributes to a core cache. With the
+# CI, there is one shared copy of core for all sketches. When global
+# options are used, the shared copy of core and cache are removed before
+# and after the build.
+function arduino_mkbuildoptglobals_cleanup()
+{
+    local clean_core=$1
+    local build_dir=$2
+    local sketch=$3
+
+    if [ -s ${sketch}.globals.h ]; then
+        clean_core=1
+    fi
+
+    # Remove sketch specific files from ./core/ between builds.
+    if [ $clean_core -ne 0 ]; then
+        rm -rf "$build_dir"/core/*
+    else
+        rm -rf "$build_dir/core/build.opt" "$build_dir"/core/*.ino.globals.h
+    fi
+
+    if [ -e ${build_dir}/core/*.a ]; then
+        # We need to preserve the build.options.json file and replace the last .ino
+        # with this sketch's ino file, or builder will throw everything away.
+        jq '."sketchLocation" = "'$sketch'"' $build_dir/build.options.json \
+            > "$build_dir"/build.options.json.tmp
+        mv "$build_dir"/build.options.json.tmp "$build_dir"/build.options.json
+        if [ $clean_core -ne 0 ]; then
+            # Hack workaround for CI not handling core rebuild for global options
+            rm ${build_dir}/core/*.a
+        fi
+    fi
+
+    if [ -s ${sketch}.globals.h ]; then
+        # Set to cleanup core at the start of the next build.
+        clean_core=1
+    else
+        clean_core=0
+    fi
+
+    echo $clean_core
+}
+
 function build_sketches_with_arduino()
 {
-    local build_mod=$1
-    local build_rem=$2
-
     local lwip
-    lwip=$(arduino_lwip_menu_option $3)
+    lwip=$(arduino_lwip_menu_option $1)
+
+    local build_mod=$2
+    local build_rem=$3
+    local build_cnt=$4
 
     build_sketches "$ESP8266_ARDUINO_BUILD_DIR" \
         "$ESP8266_ARDUINO_CLI" \
         "$ESP8266_ARDUINO_LIBRARIES" \
-        "$build_mod" "$build_rem" "$lwip"
+        "$lwip" "$build_mod" "$build_rem" "$build_cnt"
     step_summary "Size report" "$cache_dir/size.log"
 }
 
@@ -510,6 +549,7 @@ function build_sketches_with_platformio()
 {
     local build_mod=$1
     local build_rem=$2
+    local build_cnt=$3
     local testcnt=0
 
     for sketch in $ESP8266_ARDUINO_SKETCHES; do
@@ -532,6 +572,14 @@ function build_sketches_with_platformio()
         if [ -n "$skip" ]; then
             echo "$skip"
             continue
+        fi
+
+        cnt=$(( $cnt + 1 ))
+        if [ $build_cnt != 0 ] ; then
+            if [ $build_cnt != $cnt ] ; then
+                continue
+            fi
+            build_cnt=0
         fi
 
         echo ::group::Building $sketch

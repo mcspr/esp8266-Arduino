@@ -50,12 +50,14 @@ ENVIRONMENT:
 
 USAGE:
   $cmd <[even | odd]> - build every Nth, when '<N> % 2' is either even or odd
-  $cmd <mod> <rem> - build every Nth, when '<N> % <mod>' is equal to 'rem'
+  $cmd <mod> <rem> <[cnt]> - build every Nth, when '<N> % <mod>' is equal to 'rem'
+                             optionally, set <cnt> to start with the Nth sketch
   $cmd - build every .ino file from ESP8266_ARDUINO_SKETCHES
 "
 
 mod=1
 rem=0
+cnt=0
 
 if [ "$#" -eq 1 ] ; then
     case "$1" in
@@ -79,6 +81,10 @@ if [ "$#" -eq 1 ] ; then
 elif [ "$#" -eq 2 ] ; then
     mod=$1
     rem=$2
+elif [ "$#" -eq 3 ] ; then
+    mod=$1
+    rem=$2
+    cnt=$3
 elif [ "$#" -gt 2 ] ; then
     echo "$usage"
     exit 1
@@ -91,11 +97,11 @@ fi
 case "$ESP8266_ARDUINO_BUILDER" in
 "arduino")
     install_arduino "$ESP8266_ARDUINO_DEBUG"
-    build_sketches_with_arduino "$mod" "$rem" "$ESP8266_ARDUINO_LWIP"
+    build_sketches_with_arduino "$ESP8266_ARDUINO_LWIP" "$mod" "$rem" "$cnt"
     ;;
 "platformio")
     install_platformio nodemcuv2
-    build_sketches_with_platformio "$mod" "$rem"
+    build_sketches_with_platformio "$mod" "$rem" "$cnt"
     ;;
 "print")
     print_sketch_info "$mod" "$rem"
