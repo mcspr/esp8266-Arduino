@@ -297,14 +297,15 @@ function install_library()
 {
     local lib_path=$1
     local name=$2
-    local archive=$3
-    local hash=$4
-    local url=$5
+    local extract=$3
+    local archive=$4
+    local hash=$5
+    local url=$6
 
     fetch_and_unpack "$archive" "$hash" "$url"
     mkdir -p "$lib_path"
     rm -rf "$lib_path/$name"
-    mv "$name" "$lib_path/$name"
+    mv "$extract" "$lib_path/$name"
 }
 
 function install_libraries()
@@ -317,9 +318,10 @@ function install_libraries()
 
     install_library "$lib_path" \
         "ArduinoJson" \
-        "ArduinoJson-v6.11.5.zip" \
-        "8b836c862e69e60c4357a5ed7cbcf1310a3bb1c6bd284fe028faaa3d9d7eed319d10febc8a6a3e06040d1c73aaba5ca487aeffe87ae9388dc4ae1677a64d602c" \
-        "https://github.com/bblanchon/ArduinoJson/releases/download/v6.11.5/ArduinoJson-v6.11.5.zip"
+        "ArduinoJson-7.4.1" \
+        "ArduinoJson-v7.4.1.zip" \
+        "1bfbc4aa3e4aa3c8e38f660333b6d5129b0443dbd0fd1eb448d14c7f041ffd2df782951ce622c6da50e2a07dcfcd268727b1f0a000211b9a5a92a806b1645bc0" \
+        "https://github.com/bblanchon/ArduinoJson/archive/refs/tags/v7.4.1.zip"
 
     popd
 }
