@@ -111,7 +111,6 @@ jobs:
     - name: Build Sketches
       env:
         ESP8266_ARDUINO_BUILDER: "arduino"
-        ESP8266_ARDUINO_IDE: "${{ runner.temp }}/arduino_ide"
         ESP8266_ARDUINO_LWIP: ${{ matrix.lwip }}
       run: |
         bash ./tests/build.sh 8 ${{ matrix.chunk }}

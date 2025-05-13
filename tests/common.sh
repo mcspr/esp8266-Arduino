@@ -107,32 +107,42 @@ END {
         awk -v sketch_name="${elf_name%.*}" "$awk_script" -
 }
 
+function format_fqbn()
+{
+    local board_name=$1
+    local flash_size=$2
+    local lwip=$3
+
+    echo "esp8266com:esp8266:${board_name}:"\
+"eesz=${flash_size},"\
+"ip=${lwip}"
+}
+
 function build_sketches()
 {
     local core_path=$1
-    local ide_path=$2
-    local hardware_path=$3
-    local library_path=$4
-    local build_mod=$5
-    local build_rem=$6
-    local lwip=$7
+    local cli_path=$2
+    local library_path=$3
+    local build_mod=$4
+    local build_rem=$5
+    local lwip=$6
 
     local build_dir="$cache_dir"/build
     mkdir -p "$build_dir"
 
-    local build_cache="$cache_dir"/cache
-    mkdir -p "$build_cache"
+    local build_out="$cache_dir"/out
+    mkdir -p "$build_out"
+
+    local fqbn=$(format_fqbn "generic" "4M1M" "$lwip")
+    echo $fqbn
 
     local build_cmd
-    build_cmd="python3 tools/build.py"\
-" --build_cache $build_cache"\
-" --build_path $build_dir"\
-" --hardware_path $hardware_path"\
-" --ide_path $ide_path"\
-" --library_path $library_path"\
-" --lwIP $lwip"\
-" --board_name generic --verbose --warnings all"\
-" --flash_size 4M1M --keep"
+    build_cmd+=${cli_path}
+    build_cmd+=" compile"\
+" --build-path $build_dir"\
+" --fqbn $fqbn"\
+" --libraries $library_path"\
+" --output-dir $build_out"
 
     print_size_info_header >"$cache_dir"/size.log
 
@@ -165,7 +175,7 @@ function build_sketches()
             rm -rf "$build_dir/core/build.opt" "$build_dir"/core/*.ino.globals.h
         fi
 
-        if [ -e $cache_dir/core/*.a ]; then
+        if [ -e ${build_dir}/core/*.a ]; then
             # We need to preserve the build.options.json file and replace the last .ino
             # with this sketch's ino file, or builder will throw everything away.
             jq '."sketchLocation" = "'$sketch'"' $build_dir/build.options.json \
@@ -173,7 +183,7 @@ function build_sketches()
             mv "$build_dir"/build.options.json.tmp "$build_dir"/build.options.json
             if [ $mk_clean_core -ne 0 ]; then
                 # Hack workaround for CI not handling core rebuild for global options
-                rm $cache_dir/core/*.a
+                rm ${build_dir}/core/*.a
             fi
         fi
 
@@ -305,40 +315,42 @@ function install_libraries()
     popd
 }
 
-function install_ide()
+function install_arduino_cli()
 {
-    # TODO replace ide distribution + arduino-builder with arduino-cli
-    local idever='1.8.19'
-    local ideurl="https://downloads.arduino.cc/arduino-$idever"
+    local path=$1
 
-    echo "Arduino IDE ${idever}"
+    local ver='1.2.2'
+    local urlbase="https://github.com/arduino/arduino-cli/releases/download/v${ver}/arduino-cli_${ver}_"
 
-    local core_path=$1
-    local ide_path=$2
+    echo "Arduino CLI ${ver}"
 
-    mkdir -p ${core_path}/tools/dist
-    pushd ${core_path}/tools/dist
+    mkdir -p ${cache_dir}/cli
+    pushd ${cache_dir}/cli
 
-    if [ "${RUNNER_OS-}" = "Windows" ]; then
-        fetch_and_unpack "arduino-windows.zip" \
-            "c4072d808aea3848bceff5772f9d1e56a0fde02366b5aa523d10975c54eee2ca8def25ee466abbc88995aa323d475065ad8eb30bf35a2aaf07f9473f9168e2da" \
-            "${ideurl}-windows.zip"
-        mv arduino-$idever arduino-distrib
-    elif [ "${RUNNER_OS-}" = "macOS" ]; then
-        fetch_and_unpack "arduino-macos.zip" \
-            "053b0c1e70da9176680264e40fcb9502f45ca5a879aeb8b6f71282b38bfdb87c63ebc6b88e35ea70a73720ad439d828cc8cb110e4c6ab07357126a36ee396325" \
-            "${ideurl}-macosx.zip"
-        # Hack to place arduino-builder in the same spot as sane OSes
-        mv Arduino.app arduino-distrib
-        mv arduino-distrib/Contents/Java/* arduino-distrib/.
-    else
-        fetch_and_unpack "arduino-linux.tar.xz" \
-            "9328abf8778200019ed40d4fc0e6afb03a4cee8baaffbcea7dd3626477e14243f779eaa946c809fb153a542bf2ed60cf11a5f135c91ecccb1243c1387be95328" \
-            "${ideurl}-linux64.tar.xz"
-        mv arduino-$idever arduino-distrib
-    fi
+    case "${RUNNER_OS-}" in
+    ("Linux")
+        fetch_and_unpack "Linux_64bit.tar.gz" \
+            "d421e2b1cbef59c41e46cf06d077214a1d24cb784030462763781c9d3911cc55257fbcc02a7ee6a2ddda5b459101dc83aeda6b3b5198805bfdce856f82774c93" \
+            "${urlbase}Linux_64bit.tar.gz"
+        ;;
+    ("Windows")
+        fetch_and_unpack "Windows_64bit.zip" \
+            "05b4eb5820fbaf670de00399d40513ecf2de9d0c2c5593a1227be03b2d11ba53e9d14cf6f934110447d6fd15c6a09769606a34fcab32ec3c2dbaa42f4627b072" \
+            "${urlbase}Windows_64bit.zip"
+        ;;
+    ("macOS")
+        fetch_and_unpack "macOS_ARM64.tar.gz" \
+            "672693418b730d8ebc57cae2c892553e821706bee06312cc77a598e834afcba7d380df4d337138ecc03a4013a349d89b744b2a3b97fafc214b619856d9162827" \
+            "${urlbase}macOS_ARM64.tar.gz"
+        ;;
+    (*)
+        echo 'Unknown ${RUNNER_OS} = "' ${RUNNER_OS} '"'
+        exit 2
+    esac
 
-    mv arduino-distrib "$ide_path"
+    cp -v arduino-cli $path
+    chmod +x $path
+
     popd
 }
 
@@ -388,8 +400,8 @@ function install_arduino()
     echo ::group::Install arduino
     local debug=$1
 
-    test -d "$ESP8266_ARDUINO_IDE" \
-        || install_ide "$ESP8266_ARDUINO_BUILD_DIR" "$ESP8266_ARDUINO_IDE"
+    command -v "${ESP8266_ARDUINO_CLI}" \
+        || install_arduino_cli "${ESP8266_ARDUINO_CLI}"
 
     local hardware_core_path="$ESP8266_ARDUINO_HARDWARE/esp8266com/esp8266"
     test -d "$hardware_core_path" \
@@ -421,8 +433,7 @@ function build_sketches_with_arduino()
     lwip=$(arduino_lwip_menu_option $3)
 
     build_sketches "$ESP8266_ARDUINO_BUILD_DIR" \
-        "$ESP8266_ARDUINO_IDE" \
-        "$ESP8266_ARDUINO_HARDWARE" \
+        "$ESP8266_ARDUINO_CLI" \
         "$ESP8266_ARDUINO_LIBRARIES" \
         "$build_mod" "$build_rem" "$lwip"
     step_summary "Size report" "$cache_dir/size.log"

@@ -6,7 +6,7 @@ ESP8266_ARDUINO_BUILD_DIR=${ESP8266_ARDUINO_BUILD_DIR:-$root}
 ESP8266_ARDUINO_BUILDER=${ESP8266_ARDUINO_BUILDER:-arduino}
 ESP8266_ARDUINO_PRESERVE_CACHE=${ESP8266_ARDUINO_PRESERVE_CACHE:-}
 
-ESP8266_ARDUINO_IDE=${ESP8266_ARDUINO_IDE:-$HOME/arduino_ide}
+ESP8266_ARDUINO_CLI=${ESP8266_ARDUINO_CLI:-$HOME/.local/bin/arduino-cli}
 ESP8266_ARDUINO_HARDWARE=${ESP8266_ARDUINO_HARDWARE:-$HOME/Arduino/hardware}
 ESP8266_ARDUINO_LIBRARIES=${ESP8266_ARDUINO_LIBRARIES:-$HOME/Arduino/libraries}
 
@@ -22,8 +22,7 @@ ENVIRONMENT:
   ESP8266_ARDUINO_SKETCHES - list of .ino files; defaults to **all available examples**
   ESP8266_ARDUINO_BUILDER - arduino or platformio
 
-  For Arduino IDE:
-    ESP8266_ARDUINO_IDE - path to the IDE (portable)
+  For Arduino CLI:
     ESP8266_ARDUINO_HARDWARE - path to the hardware directory (usually, containing our repo)
     ESP8266_ARDUINO_LIBRATIES - path to the libraries directory (external dependencies)
     ESP8266_ARDUINO_DEBUG - debug or nodebug
