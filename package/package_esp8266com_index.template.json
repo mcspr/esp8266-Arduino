@@ -210,6 +210,13 @@
                      "size": "25494144"
                   },
                   {
+                     "host": "arm64-apple-darwin",
+                     "url": "https://github.com/earlephilhower/pico-quick-toolchain/releases/download/2.2.0/python3.18-portable-darwin_arm64.tar.gz",
+                     "archiveFileName": "python3.18-portable-darwin_arm64.tar.gz",
+                     "checksum": "SHA-256:ac6ee694191ac4db770e147429a7606b50063110db9ccbaf46e0e5ff8f7dcd20",
+                     "size": "90294119"
+                  },
+                  {
                      "host": "x86_64-pc-linux-gnu",
                      "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/3.2.0-gcc10.3/python3-via-env.tar.gz",
                      "archiveFileName": "python3-via-env.tar.gz",
@@ -256,6 +263,13 @@
                      "archiveFileName": "x86_64-apple-darwin14.xtensa-lx106-elf-c791b74.230224.tar.gz",
                      "checksum": "SHA-256:59c9890ac51cfdd687e072e310f86e3aa2da549a02fa4d1dcda7f9bc2dffb0fe",
                      "size": "77742495"
+                  },
+                  {
+                     "host": "x86_64-apple-darwin",
+                     "url": "https://github.com/mcspr/esp-quick-toolchain/releases/download/4.0.0-test1/aarch64-apple-darwin20.4.xtensa-lx106-elf-e4b552e.250513.tar.gz",
+                     "archiveFileName": "aarch64-apple-darwin20.4.xtensa-lx106-elf-e4b552e.250513.tar.gz",
+                     "checksum": "SHA-256:e3cfd40ad89572b9bb576e04af9fa084357f2ee921a0f57d0fa9f936ca511998",
+                     "size": "70464186"
                   },
                   {
                      "host": "x86_64-pc-linux-gnu",
@@ -313,6 +327,13 @@
                      "size": "380164"
                   },
                   {
+                      "host": "arm64-apple-darwin",
+                      "url": "https://github.com/mcspr/esp-quick-toolchain/releases/download/4.0.0-test1/aarch64-apple-darwin20.4.mkspiffs-7fefeac.250513.tar.gz",
+                      "archiveFileName": "aarch64-apple-darwin20.4.mkspiffs-7fefeac.250513.tar.gz",
+                      "checksum": "SHA-256:3c610a71b40a2ee126c77186ff410655427d184bc826df189883356909db54d2",
+                      "size": "71395"
+                  },
+                  {
                      "host": "x86_64-pc-linux-gnu",
                      "url": "https://github.com/earlephilhower/esp-quick-toolchain/releases/download/3.2.0-gcc10.3/x86_64-linux-gnu.mkspiffs-7fefeac.230224.tar.gz",
                      "archiveFileName": "x86_64-linux-gnu.mkspiffs-7fefeac.230224.tar.gz",
@@ -366,6 +387,13 @@
                      "archiveFileName": "x86_64-apple-darwin14.mklittlefs-4aca452.230224.tar.gz",
                      "checksum": "SHA-256:13048f6ae246b00ea1902156542a832c767ba43d839fc62b2f6668e8821bd899",
                      "size": "378772"
+                  },
+                  {
+                      "host": "arm64-apple-darwin",
+                      "url": "https://github.com/mcspr/esp-quick-toolchain/releases/download/4.0.0-test1/aarch64-apple-darwin20.4.mklittlefs-dee63fd.250513.tar.gz",
+                      "archiveFileName": "aarch64-apple-darwin20.4.mklittlefs-dee63fd.250513.tar.gz",
+                      "checksum": "SHA-256:51374d6c077b5d5e2e283eb5b54544a0050c53d6b23112f57b2cfc6caf9f9792",
+                      "size": "70357"
                   },
                   {
                      "host": "x86_64-pc-linux-gnu",
