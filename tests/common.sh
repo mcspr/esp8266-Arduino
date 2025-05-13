@@ -411,7 +411,6 @@ function install_core()
 
 function install_arduino()
 {
-    set -x
     echo ::group::Install arduino
     local debug=$1
 
@@ -425,7 +424,6 @@ function install_arduino()
     install_libraries "$ESP8266_ARDUINO_BUILD_DIR" "$ESP8266_ARDUINO_LIBRARIES"
 
     echo ::endgroup::
-    set +x
 }
 
 function arduino_lwip_menu_option()

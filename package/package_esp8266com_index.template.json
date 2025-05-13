@@ -265,7 +265,7 @@
                      "size": "77742495"
                   },
                   {
-                     "host": "x86_64-apple-darwin",
+                     "host": "arm64-apple-darwin",
                      "url": "https://github.com/mcspr/esp-quick-toolchain/releases/download/4.0.0-test1/aarch64-apple-darwin20.4.xtensa-lx106-elf-e4b552e.250513.tar.gz",
                      "archiveFileName": "aarch64-apple-darwin20.4.xtensa-lx106-elf-e4b552e.250513.tar.gz",
                      "checksum": "SHA-256:e3cfd40ad89572b9bb576e04af9fa084357f2ee921a0f57d0fa9f936ca511998",
