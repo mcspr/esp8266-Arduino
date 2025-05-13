@@ -339,9 +339,15 @@ function install_arduino_cli()
             "${urlbase}Windows_64bit.zip"
         ;;
     ("macOS")
-        fetch_and_unpack "macOS_ARM64.tar.gz" \
-            "672693418b730d8ebc57cae2c892553e821706bee06312cc77a598e834afcba7d380df4d337138ecc03a4013a349d89b744b2a3b97fafc214b619856d9162827" \
-            "${urlbase}macOS_ARM64.tar.gz"
+        if [ "${RUNNER_ARCH-}" = "ARM64" ] ; then
+            fetch_and_unpack "macOS_ARM64.tar.gz" \
+                "672693418b730d8ebc57cae2c892553e821706bee06312cc77a598e834afcba7d380df4d337138ecc03a4013a349d89b744b2a3b97fafc214b619856d9162827" \
+                "${urlbase}macOS_ARM64.tar.gz"
+        else
+            fetch_and_unpack "macOS_64bit.tar.gz" \
+                "5659f08d787840aa6689fd063477402b4ed572663fea20de496b249d86a440059e3e6f377bd8020fb6b67202c1bdea6f98a4c4e052c31f01b2c9027ebec10b04" \
+                "${urlbase}macOS_64bit.tar.gz"
+        fi
         ;;
     (*)
         echo 'Unknown ${RUNNER_OS} = "' ${RUNNER_OS} '"'
