@@ -97,8 +97,11 @@ case "$ESP8266_ARDUINO_BUILDER" in
     install_platformio nodemcuv2
     build_sketches_with_platformio "$mod" "$rem"
     ;;
+"print")
+    print_sketch_info "$mod" "$rem"
+    ;;
 *)
-    echo "Unknown builder! Must be either arduino or platformio"
+    echo "Unknown builder! Must be one of - arduino, platformio or print"
     exit 1
     ;;
 esac

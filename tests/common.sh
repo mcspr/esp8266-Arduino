@@ -107,6 +107,23 @@ END {
         awk -v sketch_name="${elf_name%.*}" "$awk_script" -
 }
 
+function print_sketch_info()
+{
+    local build_mod=$1
+    local build_rem=$2
+
+    local testcnt=0
+
+    for sketch in $ESP8266_ARDUINO_SKETCHES; do
+        testcnt=$(( ($testcnt + 1) % $build_mod ))
+        if [ $testcnt -ne $build_rem ]; then
+            continue  # Not ours to do
+        fi
+
+        echo $sketch
+    done
+}
+
 function format_fqbn()
 {
     local board_name=$1
