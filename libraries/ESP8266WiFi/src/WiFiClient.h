@@ -27,17 +27,7 @@
 #include "Client.h"
 #include "IPAddress.h"
 #include "include/slist.h"
-
-#ifndef TCP_MSS
-#define TCP_MSS 1460 // lwip1.4
-#endif
-
-#define WIFICLIENT_MAX_PACKET_SIZE TCP_MSS
-#define WIFICLIENT_MAX_FLUSH_WAIT_MS 300
-
-#define TCP_DEFAULT_KEEPALIVE_IDLE_SEC          7200 // 2 hours
-#define TCP_DEFAULT_KEEPALIVE_INTERVAL_SEC      75   // 75 sec
-#define TCP_DEFAULT_KEEPALIVE_COUNT             9    // fault after 9 failures
+#include "include/internal.h"
 
 class ClientContext;
 class WiFiServer;
@@ -65,31 +55,30 @@ public:
   virtual std::unique_ptr<WiFiClient> clone() const;
 
   virtual uint8_t status();
-  virtual int connect(IPAddress ip, uint16_t port) override;
-  virtual int connect(const char *host, uint16_t port) override;
+  int connect(IPAddress ip, uint16_t port) override;
+  int connect(const char *host, uint16_t port) override;
   virtual int connect(const String& host, uint16_t port);
-  virtual size_t write(uint8_t) override;
-  virtual size_t write(const uint8_t *buf, size_t size) override;
-  virtual size_t write_P(PGM_P buf, size_t size);
-  [[ deprecated("use stream.sendHow(client...)") ]]
-  size_t write(Stream& stream);
 
-  virtual int available() override;
-  virtual int read() override;
-  virtual int read(uint8_t* buf, size_t size) override;
+  using Print::write;
+  size_t write(uint8_t) override;
+  size_t write(const uint8_t *buf, size_t size) override;
+
+  int available() override;
+  int read() override;
+  int read(uint8_t* buf, size_t size) override;
   int read(char* buf, size_t size);
 
-  virtual int peek() override;
+  int peek() override;
   virtual size_t peekBytes(uint8_t *buffer, size_t length);
   size_t peekBytes(char *buffer, size_t length) {
     return peekBytes((uint8_t *) buffer, length);
   }
-  virtual void flush() override { (void)flush(0); } // wait for all outgoing characters to be sent, output buffer should be empty after this call
-  virtual void stop() override { (void)stop(0); }
+  void flush() override { (void)flush(0); } // wait for all outgoing characters to be sent, output buffer should be empty after this call
+  void stop() override { (void)stop(0); }
   bool flush(unsigned int maxWaitMs);
   bool stop(unsigned int maxWaitMs);
-  virtual uint8_t connected() override;
-  virtual operator bool() override;
+  uint8_t connected() override;
+  operator bool() override;
 
   virtual IPAddress remoteIP();
   virtual uint16_t  remotePort();
@@ -102,8 +91,6 @@ public:
 
   friend class WiFiServer;
 
-  using Print::write;
-  
   static void stopAll();
   static void stopAllExcept(WiFiClient * c);
 
@@ -133,27 +120,26 @@ public:
   void setSync(bool sync);
 
   // peek buffer API is present
-  virtual bool hasPeekBufferAPI () const override;
+  bool hasPeekBufferAPI () const override { return true; }
 
   // return number of byte accessible by peekBuffer()
-  virtual size_t peekAvailable () override;
+  size_t peekAvailable () override;
 
   // return a pointer to available data buffer (size = peekAvailable())
   // semantic forbids any kind of read() before calling peekConsume()
-  virtual const char* peekBuffer () override;
+  const void* peekBuffer () override;
 
   // consume bytes after use (see peekBuffer)
-  virtual void peekConsume (size_t consume) override;
+  void peekConsume (size_t consume) override;
 
-  virtual bool outputCanTimeout () override { return connected(); }
-  virtual bool inputCanTimeout () override { return connected(); }
+  bool outputCanTimeout () override { return connected(); }
+  bool inputCanTimeout () override { return connected(); }
 
   // Immediately stops this client instance.
   // Unlike stop(), does not wait to gracefuly shutdown the connection.
   void abort();
 
 protected:
-
   static int8_t _s_connected(void* arg, void* tpcb, int8_t err);
   static void _s_err(void* arg, int8_t err);
 

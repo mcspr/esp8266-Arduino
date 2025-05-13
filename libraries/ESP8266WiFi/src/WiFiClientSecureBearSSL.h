@@ -51,9 +51,11 @@ class WiFiClientSecureCtx : public WiFiClient {
     int connect(const char* name, uint16_t port) override;
 
     uint8_t connected() override;
+
+    using Print::write;
+    size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
-    size_t write_P(PGM_P buf, size_t size) override;
-    size_t write(Stream& stream); // Note this is not virtual
+
     int read(uint8_t *buf, size_t size) override;
     int read(char *buf, size_t size) { return read((uint8_t*)buf, size); }
     int available() override;
@@ -135,17 +137,17 @@ class WiFiClientSecureCtx : public WiFiClient {
     bool setSSLVersion(uint32_t min = BR_TLS10, uint32_t max = BR_TLS12);
 
     // peek buffer API is present
-    virtual bool hasPeekBufferAPI () const override { return true; }
+    bool hasPeekBufferAPI () const override { return true; }
 
     // return number of byte accessible by peekBuffer()
-    virtual size_t peekAvailable () override { return WiFiClientSecureCtx::available(); }
+    size_t peekAvailable () override { return WiFiClientSecureCtx::available(); }
 
     // return a pointer to available data buffer (size = peekAvailable())
     // semantic forbids any kind of read() before calling peekConsume()
-    virtual const char* peekBuffer () override;
+    const void* peekBuffer () override;
 
     // consume bytes after use (see peekBuffer)
-    virtual void peekConsume (size_t consume) override;
+    void peekConsume (size_t consume) override;
 
   protected:
     bool _connectSSL(const char *hostName); // Do initial SSL handshake
@@ -205,7 +207,7 @@ class WiFiClientSecureCtx : public WiFiClient {
     std::shared_ptr<unsigned char> _alloc_iobuf(size_t sz);
     void _freeSSL();
     int _run_until(unsigned target, bool blocking = true);
-    size_t _write(const uint8_t *buf, size_t size, bool pmem);
+    size_t _write(const uint8_t *buf, size_t size);
     bool _wait_for_handshake(); // Sets and return the _handshake_done after connecting
 
     // Optional client certificate
@@ -268,11 +270,11 @@ class WiFiClientSecure : public WiFiClient {
     int connect(const char* name, uint16_t port) override { return _ctx->connect(name, port); }
 
     uint8_t connected() override { return _ctx->connected(); }
+
+    using Print::write;
+    size_t write(uint8_t c) override { return _ctx->write(c); }
     size_t write(const uint8_t *buf, size_t size) override { return _ctx->write(buf, size); }
-    size_t write_P(PGM_P buf, size_t size) override { return _ctx->write_P(buf, size); }
-    size_t write(const char *buf) { return write((const uint8_t*)buf, strlen(buf)); }
-    size_t write_P(const char *buf) { return write_P((PGM_P)buf, strlen_P(buf)); }
-    size_t write(Stream& stream) /* Note this is not virtual */ { return _ctx->write(stream); }
+
     int read(uint8_t *buf, size_t size) override { return _ctx->read(buf, size); }
     int available() override { return _ctx->available(); }
     int availableForWrite() override { return _ctx->availableForWrite(); }
@@ -346,17 +348,17 @@ class WiFiClientSecure : public WiFiClient {
     static bool probeMaxFragmentLength(const String& host, uint16_t port, uint16_t len);
 
     // peek buffer API is present
-    virtual bool hasPeekBufferAPI () const override { return true; }
+    bool hasPeekBufferAPI () const override { return true; }
 
     // return number of byte accessible by peekBuffer()
-    virtual size_t peekAvailable () override { return _ctx->available(); }
+    size_t peekAvailable () override { return _ctx->available(); }
 
     // return a pointer to available data buffer (size = peekAvailable())
     // semantic forbids any kind of read() before calling peekConsume()
-    virtual const char* peekBuffer () override { return _ctx->peekBuffer(); }
+    const void* peekBuffer () override { return _ctx->peekBuffer(); }
 
     // consume bytes after use (see peekBuffer)
-    virtual void peekConsume (size_t consume) override { return _ctx->peekConsume(consume); }
+    void peekConsume (size_t consume) override { return _ctx->peekConsume(consume); }
   
     void keepAlive(uint16_t idle_sec = TCP_DEFAULT_KEEPALIVE_IDLE_SEC, uint16_t intv_sec = TCP_DEFAULT_KEEPALIVE_INTERVAL_SEC, uint8_t count = TCP_DEFAULT_KEEPALIVE_COUNT) override
     {

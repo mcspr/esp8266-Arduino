@@ -294,7 +294,7 @@ int WiFiClientSecureCtx::availableForWrite () {
   return 0;
 }
 
-size_t WiFiClientSecureCtx::_write(const uint8_t *buf, size_t size, bool pmem) {
+size_t WiFiClientSecureCtx::_write(const uint8_t *buf, size_t size) {
   size_t sent_bytes = 0;
 
   if (!size || !_engineConnected()) {
@@ -316,11 +316,7 @@ size_t WiFiClientSecureCtx::_write(const uint8_t *buf, size_t size, bool pmem) {
       size_t sendapp_len;
       unsigned char *sendapp_buf = br_ssl_engine_sendapp_buf(_eng, &sendapp_len);
       int to_send = size > sendapp_len ? sendapp_len : size;
-      if (pmem) {
-        memcpy_P(sendapp_buf, buf, to_send);
-      } else {
-        memcpy(sendapp_buf, buf, to_send);
-      }
+      memcpy(sendapp_buf, buf, to_send);
       br_ssl_engine_sendapp_ack(_eng, to_send);
       br_ssl_engine_flush(_eng, 0);
       flush();
@@ -336,20 +332,11 @@ size_t WiFiClientSecureCtx::_write(const uint8_t *buf, size_t size, bool pmem) {
 }
 
 size_t WiFiClientSecureCtx::write(const uint8_t *buf, size_t size) {
-  return _write(buf, size, false);
+  return _write(buf, size);
 }
 
-size_t WiFiClientSecureCtx::write_P(PGM_P buf, size_t size) {
-  return _write((const uint8_t *)buf, size, true);
-}
-
-size_t WiFiClientSecureCtx::write(Stream& stream) {
-  if (!_engineConnected()) {
-    DEBUG_BSSL("write: no br_ssl engine to work with\n");
-    return 0;
-  }
-
-  return stream.sendAll(this);
+size_t WiFiClientSecureCtx::write(uint8_t c) {
+  return _write(&c, 1);
 }
 
 int WiFiClientSecureCtx::read(uint8_t *buf, size_t size) {
@@ -395,9 +382,9 @@ int WiFiClientSecureCtx::read(uint8_t *buf, size_t size) {
 
 // return a pointer to available data buffer (size = peekAvailable())
 // semantic forbids any kind of read() before calling peekConsume()
-const char* WiFiClientSecureCtx::peekBuffer ()
+const void* WiFiClientSecureCtx::peekBuffer ()
 {
-    return (const char*)_recvapp_buf;
+    return _recvapp_buf;
 }
 
 // consume bytes after use (see peekBuffer)

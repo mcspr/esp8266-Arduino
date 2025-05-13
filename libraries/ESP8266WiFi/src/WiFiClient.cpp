@@ -220,29 +220,6 @@ size_t WiFiClient::write(const uint8_t *buf, size_t size)
     return _client->write((const char*)buf, size);
 }
 
-size_t WiFiClient::write(Stream& stream)
-{
-    // (this method is deprecated)
-
-    if (!_client || !stream.available())
-    {
-        return 0;
-    }
-    // core up to 2.7.4 was equivalent to this
-    return stream.sendAll(this);
-}
-
-size_t WiFiClient::write_P(PGM_P buf, size_t size)
-{
-    if (!_client || !size)
-    {
-        return 0;
-    }
-    _client->setTimeout(_timeout);
-    StreamConstPtr nopeek(buf, size);
-    return nopeek.sendAll(this);
-}
-
 int WiFiClient::available()
 {
     if (!_client)
@@ -439,14 +416,9 @@ uint8_t WiFiClient::getKeepAliveCount () const
     return _client->getKeepAliveCount();
 }
 
-bool WiFiClient::hasPeekBufferAPI () const
-{
-    return true;
-}
-
 // return a pointer to available data buffer (size = peekAvailable())
 // semantic forbids any kind of read() before calling peekConsume()
-const char* WiFiClient::peekBuffer ()
+const void* WiFiClient::peekBuffer ()
 {
     return _client? _client->peekBuffer(): nullptr;
 }

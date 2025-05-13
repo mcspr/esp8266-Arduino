@@ -26,9 +26,15 @@ class WiFiClient;
 
 typedef void (*discard_cb_t)(void*, ClientContext*);
 
+#include <debug.h>
 #include <assert.h>
 #include <esp_priv.h>
 #include <coredecls.h>
+
+#include <lwip/init.h>
+#include <lwip/tcp.h>
+
+#include "internal.h"
 
 bool getDefaultPrivateGlobalSyncValue ();
 
@@ -313,7 +319,7 @@ public:
         _rx_buf_offset = 0;
     }
 
-    bool wait_until_acked(int max_wait_ms = WIFICLIENT_MAX_FLUSH_WAIT_MS)
+    bool wait_until_acked(int max_wait_ms)
     {
         // https://github.com/esp8266/Arduino/pull/3967#pullrequestreview-83451496
         // option 1 done
@@ -422,11 +428,11 @@ public:
 
     // return a pointer to available data buffer (size = peekAvailable())
     // semantic forbids any kind of read() before calling peekConsume()
-    const char* peekBuffer ()
+    const void* peekBuffer ()
     {
         if (!_rx_buf)
             return nullptr;
-        return (const char*)_rx_buf->payload + _rx_buf_offset;
+        return (const uint8_t*)_rx_buf->payload + _rx_buf_offset;
     }
 
     // return number of byte accessible by peekBuffer()
@@ -460,7 +466,7 @@ protected:
         }
     }
 
-    size_t _write_from_source(const char* ds, const size_t dl)
+    size_t _write_from_source(const char* ds, size_t dl)
     {
         assert(_datasource == nullptr);
         assert(!_send_waiting);
@@ -489,7 +495,7 @@ protected:
         } while(true);
 
         if (_sync)
-            wait_until_acked();
+            wait_until_acked(_timeout_ms);
 
         return _written;
     }
