@@ -3,7 +3,13 @@
 name: Build IDE examples
 
 on:
+  push:
+    branches:
+      - build/gcc14
+    tags-ignore: '**'
   pull_request:
+    branches:
+      - build/gcc14
 
 permissions:
   contents: read
