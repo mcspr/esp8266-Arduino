@@ -94,7 +94,7 @@ static WVFState wvfState;
 #pragma GCC optimize ("Os")
 
 // Interrupt on/off control
-static IRAM_ATTR void timer1Interrupt();
+static void timer1Interrupt();
 static bool timerRunning = false;
 
 static __attribute__((noinline)) void initTimer() {
@@ -108,7 +108,7 @@ static __attribute__((noinline)) void initTimer() {
   }
 }
 
-static IRAM_ATTR void forceTimerInterrupt() {
+static void IRAM_ATTR forceTimerInterrupt() {
   if (T1L > microsecondsToClockCycles(10)) {
     T1L = microsecondsToClockCycles(10);
   }
@@ -145,7 +145,7 @@ static uint32_t _pwmPeriod = microsecondsToClockCycles(1000000UL) / _pwmFreq;
 
 // If there are no more scheduled activities, shut down Timer 1.
 // Otherwise, do nothing.
-static IRAM_ATTR void disableIdleTimer() {
+static void IRAM_ATTR disableIdleTimer() {
  if (timerRunning && !wvfState.waveformEnabled && !pwmState.cnt && !wvfState.timer1CB) {
     ETS_FRC_TIMER1_NMI_INTR_ATTACH(NULL);
     timer1_disable();
@@ -156,7 +156,7 @@ static IRAM_ATTR void disableIdleTimer() {
 
 // Notify the NMI that a new PWM state is available through the mailbox.
 // Wait for mailbox to be emptied (either busy or delay() as needed)
-static IRAM_ATTR void _notifyPWM(PWMState *p, bool idle) {
+static void IRAM_ATTR _notifyPWM(PWMState *p, bool idle) {
   p->pwmUpdate = nullptr;
   pwmState.pwmUpdate = p;
   MEMBARRIER();
@@ -238,7 +238,7 @@ static void _cleanAndRemovePWM(PWMState *p, int pin) {
 
 // Disable PWM on a specific pin (i.e. when a digitalWrite or analogWrite(0%/100%))
 extern bool _stopPWM_weak(uint8_t pin) __attribute__((weak));
-IRAM_ATTR bool _stopPWM_weak(uint8_t pin) {
+bool IRAM_ATTR _stopPWM_weak(uint8_t pin) {
   if (!((1<<pin) & pwmState.mask)) {
     return false; // Pin not actually active
   }
@@ -261,7 +261,7 @@ IRAM_ATTR bool _stopPWM_weak(uint8_t pin) {
   return true;
 }
 static bool _stopPWM_bound(uint8_t pin) __attribute__((weakref("_stopPWM_weak")));
-IRAM_ATTR bool _stopPWM(uint8_t pin) {
+bool IRAM_ATTR _stopPWM(uint8_t pin) {
   return _stopPWM_bound(pin);
 }
 
@@ -431,7 +431,7 @@ void setTimer1Callback(uint32_t (*fn)()) {
 
 // Stops a waveform on a pin
 extern int stopWaveform_weak(uint8_t pin) __attribute__((weak));
-IRAM_ATTR int stopWaveform_weak(uint8_t pin) {
+int IRAM_ATTR stopWaveform_weak(uint8_t pin) {
   // Can't possibly need to stop anything if there is no timer active
   if (!timerRunning) {
     return false;
@@ -455,7 +455,7 @@ IRAM_ATTR int stopWaveform_weak(uint8_t pin) {
   return true;
 }
 static int stopWaveform_bound(uint8_t pin) __attribute__((weakref("stopWaveform_weak")));
-IRAM_ATTR int stopWaveform(uint8_t pin) {
+int IRAM_ATTR stopWaveform(uint8_t pin) {
   return stopWaveform_bound(pin);
 }
 
@@ -465,14 +465,14 @@ IRAM_ATTR int stopWaveform(uint8_t pin) {
 // Normally would not want two copies like this, but due to different
 // optimization levels the inline attribute gets lost if we try the
 // other version.
-static inline IRAM_ATTR uint32_t GetCycleCountIRQ() {
+static inline uint32_t IRAM_ATTR GetCycleCountIRQ() {
   uint32_t ccount;
   __asm__ __volatile__("rsr %0,ccount":"=a"(ccount));
   return ccount;
 }
 
 // Find the earliest cycle as compared to right now
-static inline IRAM_ATTR uint32_t earliest(uint32_t a, uint32_t b) {
+static inline uint32_t IRAM_ATTR earliest(uint32_t a, uint32_t b) {
     uint32_t now = GetCycleCountIRQ();
     int32_t da = a - now;
     int32_t db = b - now;
@@ -497,7 +497,7 @@ static inline IRAM_ATTR uint32_t earliest(uint32_t a, uint32_t b) {
 // When the time to the next edge is greater than this, RTI and set another IRQ to minimize CPU usage
 #define MINIRQTIME microsecondsToClockCycles(4)
 
-static IRAM_ATTR void timer1Interrupt() {
+static void IRAM_ATTR timer1Interrupt() {
   // Flag if the core is at 160 MHz, for use by adjust()
   bool turbo = (*(uint32_t*)0x3FF00014) & 1 ? true : false;
 

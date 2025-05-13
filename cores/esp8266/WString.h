@@ -23,7 +23,7 @@
 #define String_class_h
 #ifdef __cplusplus
 
-#include <pgmspace.h>
+#include <sys/pgmspace.h>
 
 #include <cstdlib>
 #include <cstdint>

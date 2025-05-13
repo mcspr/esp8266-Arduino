@@ -136,23 +136,23 @@ private:
     ETSTimer timer;
 
     // Event/IRQ callbacks, so they can't use "this" and need to be static
-    static void IRAM_ATTR onSclChange(void);
-    static void IRAM_ATTR onSdaChange(void);
-    static void           eventTask(ETSEvent* e);
-    static void IRAM_ATTR onTimer(void* unused);
+    static void onSclChange(void);
+    static void onSdaChange(void);
+    static void eventTask(ETSEvent* e);
+    static void onTimer(void* unused);
 
     // Allow not linking in the slave code if there is no call to setAddress
     bool _slaveEnabled = false;
 
     // Internal use functions
-    void IRAM_ATTR busywait(unsigned int v);
-    bool           write_start(void);
-    bool           write_stop(void);
-    bool           write_bit(bool bit);
-    bool           read_bit(void);
-    bool           write_byte(unsigned char byte);
-    unsigned char  read_byte(bool nack);
-    void IRAM_ATTR onTwipEvent(uint8_t status);
+    void    busywait(unsigned int v);
+    bool    write_start(void);
+    bool    write_stop(void);
+    bool    write_bit(bool bit);
+    bool    read_bit(void);
+    bool    write_byte(unsigned char byte);
+    uint8_t read_byte(bool nack);
+    void    onTwipEvent(uint8_t status);
 
     // Handle the case where a slave needs to stretch the clock with a time-limited busy wait
     inline void WAIT_CLOCK_STRETCH()
@@ -185,8 +185,8 @@ public:
     uint8_t        transmit(const uint8_t* data, uint8_t length);
     void           attachSlaveRxEvent(void (*function)(uint8_t*, size_t));
     void           attachSlaveTxEvent(void (*function)(void));
-    void IRAM_ATTR reply(uint8_t ack);
-    void IRAM_ATTR releaseBus(void);
+    void           reply(uint8_t ack);
+    void           releaseBus(void);
     void           enableSlave();
 };
 

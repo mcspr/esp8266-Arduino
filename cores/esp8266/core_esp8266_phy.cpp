@@ -299,9 +299,9 @@ static const uint8_t ICACHE_FLASH_ATTR phy_init_data[128] =
 
 static bool spoof_init_data = false;
 
-extern int __real_spi_flash_read(uint32_t addr, uint32_t* dst, size_t size);
-extern int IRAM_ATTR __wrap_spi_flash_read(uint32_t addr, uint32_t* dst, size_t size);
-extern int __get_adc_mode();
+int __real_spi_flash_read(uint32_t addr, uint32_t* dst, size_t size);
+int __wrap_spi_flash_read(uint32_t addr, uint32_t* dst, size_t size);
+int __get_adc_mode();
 
 /*
   Verified that the wide filtering of all 128 byte flash reads during
@@ -314,7 +314,7 @@ extern int __get_adc_mode();
     flash read  0xFB000 128  // PHY_DATA (EEPROM address space)
     flash read  0xFC000 628  // RC_CAL
  */
-extern int IRAM_ATTR __wrap_spi_flash_read(uint32_t addr, uint32_t* dst, size_t size)
+int IRAM_ATTR __wrap_spi_flash_read(uint32_t addr, uint32_t* dst, size_t size)
 {
     if (!spoof_init_data || size != 128) {
         return __real_spi_flash_read(addr, dst, size);
@@ -328,20 +328,20 @@ extern int IRAM_ATTR __wrap_spi_flash_read(uint32_t addr, uint32_t* dst, size_t 
     return 0;
 }
 
-extern int __get_rf_mode(void)  __attribute__((weak));
-extern int __get_rf_mode(void)
+int __get_rf_mode(void)  __attribute__((weak));
+int __get_rf_mode(void)
 {
     return -1;  // mode not set
 }
 
-extern int __get_adc_mode(void) __attribute__((weak));
-extern int __get_adc_mode(void)
+int __get_adc_mode(void) __attribute__((weak));
+int __get_adc_mode(void)
 {
     return 33; // default ADC mode
 }
 
-extern void __run_user_rf_pre_init(void) __attribute__((weak));
-extern void __run_user_rf_pre_init(void)
+void __run_user_rf_pre_init(void) __attribute__((weak));
+void __run_user_rf_pre_init(void)
 {
     return; // default do nothing
 }
@@ -376,4 +376,4 @@ void user_rf_pre_init()
 
 void IRAM_ATTR user_spi_flash_dio_to_qio_pre_init() {}
 
-};
+} // extern "C"

@@ -496,7 +496,13 @@ void DhcpServer::send_nak(struct dhcps_msg* m)
 #endif
         return;
     }
-    LWIP_IS_OK("dhcps send nak", udp_sendto(pcb_dhcps, p, &broadcast_dhcps, DHCPS_CLIENT_PORT));
+    if (!LWIP_IS_OK("dhcps send nak",
+                    udp_sendto(pcb_dhcps, p, &broadcast_dhcps, DHCPS_CLIENT_PORT)))
+    {
+#if DHCPS_DEBUG
+        os_printf("dhcps: send_nak>>udp_sendto failed\n");
+#endif
+    }
     if (p->ref != 0)
     {
 #if DHCPS_DEBUG
