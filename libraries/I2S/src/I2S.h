@@ -55,7 +55,11 @@ public:
   // Read up to size samples from the I2S device.  Non-blocking, will read
   // from 0...size samples and return the count read.  Be sure your app handles
   // the partial read case (i.e. yield()ing and trying to read more).
+  using Stream::read;
   int read(void* buffer, size_t size);
+  int read(uint8_t* buffer, size_t size) override {
+    return read(static_cast<void*>(buffer), size);
+  }
 
   // Write a single sample to the I2S device.  Blocking until write succeeds
   size_t write(int32_t);
