@@ -318,27 +318,28 @@ function install_libraries()
 function install_arduino_cli()
 {
     local path=$1
+    local core_path=$2
 
     local ver='1.2.2'
     local urlbase="https://github.com/arduino/arduino-cli/releases/download/v${ver}/arduino-cli_${ver}_"
 
     echo "Arduino CLI ${ver}"
 
-    mkdir -p ${cache_dir}/cli
-    pushd ${cache_dir}/cli
+    mkdir -p ${core_path}/dist
+    pushd ${core_path}/dist
 
     case "${RUNNER_OS-}" in
-    ("Linux")
+    "Linux")
         fetch_and_unpack "Linux_64bit.tar.gz" \
             "d421e2b1cbef59c41e46cf06d077214a1d24cb784030462763781c9d3911cc55257fbcc02a7ee6a2ddda5b459101dc83aeda6b3b5198805bfdce856f82774c93" \
             "${urlbase}Linux_64bit.tar.gz"
         ;;
-    ("Windows")
+    "Windows")
         fetch_and_unpack "Windows_64bit.zip" \
             "05b4eb5820fbaf670de00399d40513ecf2de9d0c2c5593a1227be03b2d11ba53e9d14cf6f934110447d6fd15c6a09769606a34fcab32ec3c2dbaa42f4627b072" \
             "${urlbase}Windows_64bit.zip"
         ;;
-    ("macOS")
+    "macOS")
         if [ "${RUNNER_ARCH-}" = "ARM64" ] ; then
             fetch_and_unpack "macOS_ARM64.tar.gz" \
                 "672693418b730d8ebc57cae2c892553e821706bee06312cc77a598e834afcba7d380df4d337138ecc03a4013a349d89b744b2a3b97fafc214b619856d9162827" \
@@ -349,7 +350,7 @@ function install_arduino_cli()
                 "${urlbase}macOS_64bit.tar.gz"
         fi
         ;;
-    (*)
+    *)
         echo 'Unknown ${RUNNER_OS} = "' ${RUNNER_OS} '"'
         exit 2
     esac
@@ -395,28 +396,36 @@ function install_core()
     core_dir=$(dirname "$hardware_core_path")
     mkdir -p "$core_dir"
 
-    if [ "${RUNNER_OS-}" = "Windows" ]; then
-        cp -a "$core_path" "${core_dir}/esp8266"
-    else
-        ln -s "$core_path" "$hardware_core_path"
-    fi
+    echo $core_dir
+    #find $core_dir
+
+    cp -a "$core_path" "${core_dir}/esp8266"
+    #if [ "${RUNNER_OS-}" = "Windows" ]; then
+    #    cp -a "$core_path" "${core_dir}/esp8266"
+    #else
+    #    ln -s "$core_path" "$hardware_core_path"
+    #fi
+
+    #find $core_dir
 }
 
 function install_arduino()
 {
+    set -x
     echo ::group::Install arduino
     local debug=$1
-
-    command -v "${ESP8266_ARDUINO_CLI}" \
-        || install_arduino_cli "${ESP8266_ARDUINO_CLI}"
 
     local hardware_core_path="$ESP8266_ARDUINO_HARDWARE/esp8266com/esp8266"
     test -d "$hardware_core_path" \
         || install_core "$ESP8266_ARDUINO_BUILD_DIR" "$hardware_core_path" "$debug"
 
+    command -v "${ESP8266_ARDUINO_CLI}" \
+        || install_arduino_cli "${ESP8266_ARDUINO_CLI}" "$hardware_core_path"
+
     install_libraries "$ESP8266_ARDUINO_BUILD_DIR" "$ESP8266_ARDUINO_LIBRARIES"
 
     echo ::endgroup::
+    set +x
 }
 
 function arduino_lwip_menu_option()
