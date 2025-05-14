@@ -407,17 +407,11 @@ function install_core()
     core_dir=$(dirname "$hardware_core_path")
     mkdir -p "$core_dir"
 
-    echo $core_dir
-    #find $core_dir
-
-    cp -a "$core_path" "${core_dir}/esp8266"
-    #if [ "${RUNNER_OS-}" = "Windows" ]; then
-    #    cp -a "$core_path" "${core_dir}/esp8266"
-    #else
-    #    ln -s "$core_path" "$hardware_core_path"
-    #fi
-
-    #find $core_dir
+    if [ "${RUNNER_OS-}" = "Windows" ]; then
+        cp -a "$core_path" "${core_dir}/esp8266"
+    else
+        ln -s "$core_path" "$hardware_core_path"
+    fi
 }
 
 function install_arduino()
