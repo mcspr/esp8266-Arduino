@@ -6,7 +6,7 @@
 	url = https://github.com/earlephilhower/bearssl-esp8266.git
 [submodule "libraries/SoftwareSerial"]
 	path = libraries/SoftwareSerial
-	url = https://github.com/plerup/espsoftwareserial.git
+	url = https://github.com/mcspr/espsoftwareserial.git
 [submodule "libraries/LittleFS/lib/littlefs"]
 	path = libraries/LittleFS/lib/littlefs
 	url = https://github.com/ARMmbed/littlefs.git
