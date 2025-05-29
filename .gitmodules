@@ -14,10 +14,10 @@
 	path = libraries/ESP8266SdFat
 	url = https://github.com/earlephilhower/ESP8266SdFat.git
 [submodule "tools/pyserial"]
-	path = tools/pyserial
+	path = tools/upload/pyserial
 	url = https://github.com/pyserial/pyserial.git
 [submodule "tools/esptool"]
-	path = tools/esptool
+	path = tools/upload/esptool
 	url = https://github.com/espressif/esptool.git
 [submodule "libraries/Ethernet"]
 	path = libraries/Ethernet
@@ -25,3 +25,6 @@
 [submodule "tools/sdk/uzlib"]
 	path = tools/sdk/uzlib
 	url = https://github.com/pfalcon/uzlib.git
+[submodule "tools/intelhex"]
+	path = tools/upload/intelhex
+	url = https://github.com/python-intelhex/intelhex

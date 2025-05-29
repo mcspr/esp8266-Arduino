@@ -105,9 +105,15 @@ Arduino IDE is developed and maintained by the Arduino team. The IDE is licensed
 
 ESP8266 core includes an xtensa gcc toolchain, which is also under GPL.
 
-Esptool.py was initially created by Fredrik Ahlberg (@themadinventor, @kongo), and is currently maintained by Angus Gratton (@projectgus) under GPL 2.0 license.
-
 [Espressif's NONOS SDK](https://github.com/espressif/ESP8266_NONOS_SDK) included in this build is under Espressif MIT License.
+
+[Esptool.py](https://github.com/espressif/esptool/) was initially created by Fredrik Ahlberg (@themadinventor, @kongo), and is currently maintained by Angus Gratton (@projectgus) under GPL 2.0 license.
+
+ESP8266 core also includes the following dependencies of Esptool.py
+
+[pyserial](https://github.com/pyserial/pyserial/tree/v3.5) by Chris Liechti (@cliechti). It is distributed under [BSD 3-clause license](https://github.com/pyserial/pyserial/blob/v3.5/LICENSE.txt).
+
+[intelhex](https://github.com/python-intelhex/intelhex) by Alexander Belchenko (@bialix) and Bert van Hall (@The-42). It is distributed under [BSD 3-clause license](https://github.com/python-intelhex/intelhex/blob/master/LICENSE.txt).
 
 ESP8266 core files are licensed under LGPL.
 

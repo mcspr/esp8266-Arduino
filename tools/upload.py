@@ -7,27 +7,22 @@ import os
 import atexit
 import pathlib
 import sys
+import site
 import tempfile
 import traceback
 
 from typing import List
 
-# Add neighbouring pyserial & esptool to search path
-MODULES = [
-    "pyserial",
-    "esptool",
-]
-
+# Add pinned submodule dependencies to search path
 PWD = pathlib.Path(__file__).resolve().parent
-for m in MODULES:
-    sys.path.insert(0, (PWD / m).as_posix())
+site.addsitedir((PWD / "upload").as_posix())
 
 # If this fails, we can't continue and will bomb below
 try:
     import esptool
 except ImportError:
     sys.stderr.write(
-        "\n*** pyserial or esptool directories not found next to upload.py tool (this script) ***\n"
+        "\n *** upload.py is unable to import esptool, make sure configured site path is correct ***\n"
     )
     traceback.print_exc(file=sys.stderr)
     sys.stderr.flush()
@@ -67,7 +62,7 @@ def make_erase_pair(addr: str, dest_size: int, block_size=2**16):
 argv = sys.argv[1:]  # Remove executable name
 
 cmdline: List[str] = []
-write_options: List[str] = ["--flash_size", "detect"]
+write_options: List[str] = []
 erase_options: List[str] = []
 
 thisarg = ""
@@ -108,9 +103,13 @@ while argv:
         cmdline.append(thisarg)
 
 
-cmdline.append("write_flash")
-for opts in (write_options, erase_options):
-    if opts:
+if write_options or erase_options:
+    prepend = ["--flash_size", "detect"]
+    prepend.extend(write_options)
+    write_options = prepend
+
+    cmdline.append("write_flash")
+    for opts in (write_options, erase_options):
         cmdline.extend(opts)
 
 try:

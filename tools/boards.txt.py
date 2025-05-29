@@ -43,20 +43,17 @@ import json
 requiredboards = [ 'generic', 'esp8285' ]
 
 ################################################################
-# serial upload speed order in menu
+# serial upload speed order in menu is the same as here
 # default is 115 for every board unless specified with 'serial' in board
 # or by user command line
 
-speeds = collections.OrderedDict([
-    (  '57',  [ 's57',  's115', 's230', 's256', 's460', 's512', 's921', 's3000' ]),
-    ( '115',  [ 's115', 's57',  's230', 's256', 's460', 's512', 's921', 's3000' ]),
-    ( '230',  [ 's230', 's57',  's115', 's256', 's460', 's512', 's921', 's3000' ]),
-    ( '256',  [ 's256', 's57',  's115', 's230', 's460', 's512', 's921', 's3000' ]),
-    ( '460',  [ 's460', 's57',  's115', 's230', 's256', 's512', 's921', 's3000' ]),
-    ( '512',  [ 's512', 's57',  's115', 's230', 's256', 's460', 's921', 's3000' ]),
-    ( '921',  [ 's921', 's57',  's115', 's230', 's256', 's460', 's512', 's3000' ]),
-    ( '3000', [ 's3000','s57',  's115', 's230', 's256', 's460', 's512', 's921'  ]),
-    ])
+speed_bauds = ('57', '115', '230', '256', '460', '512', '921', '1500', '3000')
+speeds = collections.OrderedDict()
+for n, nbaud in enumerate(speed_bauds):
+    s = [nbaud]
+    s.extend(speed_bauds[0 : n])
+    s.extend(speed_bauds[n + 1 : len(speed_bauds)])
+    speeds[nbaud] = [f's{baud}' for baud in s]
 
 ################################################################
 # boards list
@@ -1274,6 +1271,10 @@ macros = {
     's921': collections.OrderedDict([
         ( '.menu.baud.921600', '921600' ),
         ( '.menu.baud.921600.upload.speed', '921600' ),
+        ]),
+    's1500': collections.OrderedDict([
+        ( '.menu.baud.1500000', '1500000' ),
+        ( '.menu.baud.1500000.upload.speed', '1500000' ),
         ]),
     's3000': collections.OrderedDict([
         ( '.menu.baud.3000000', '3000000' ),
