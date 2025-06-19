@@ -20,17 +20,15 @@
     Modified January 2017 by Bjorn Hammarberg (bjoham@esp8266.com) - i2c slave support
 */
 #include "twi.h"
-#include "pins_arduino.h"
-#include "wiring_private.h"
 #include "PolledTimeout.h"
 
-extern "C"
-{
 #include "twi_util.h"
 #include "ets_sys.h"
-};
 
-// Inline helpers
+namespace
+{
+
+// Inline helpers for reading
 static inline __attribute__((always_inline)) void SDA_LOW(const int twi_sda)
 {
     GPES = (1 << twi_sda);
@@ -54,6 +52,20 @@ static inline __attribute__((always_inline)) void SCL_HIGH(const int twi_scl)
 static inline __attribute__((always_inline)) bool SCL_READ(const int twi_scl)
 {
     return (GPI & (1 << twi_scl)) != 0;
+}
+
+// Handle the case where a slave needs to stretch the clock with a time-limited busy wait
+static inline void WAIT_CLOCK_STRETCH(uint32_t clockStretchLimit, unsigned char twi_scl)
+{
+    esp8266::polledTimeout::oneShotFastUs  timeout(clockStretchLimit);
+    esp8266::polledTimeout::periodicFastUs yieldTimeout(5000);
+    while (!timeout && !SCL_READ(twi_scl))  // outer loop is stretch duration up to stretch limit
+    {
+        if (yieldTimeout)  // inner loop yields every 5ms
+        {
+            yield();
+        }
+    }
 }
 
 // Implement as a class to reduce code size by allowing access to many global variables with a
@@ -117,7 +129,7 @@ private:
     uint8_t      twi_rxBuffer[TWI_BUFFER_LENGTH];
     volatile int twi_rxBufferIndex = 0;
 
-    void (*twi_onSlaveTransmit)(void);
+    void (*twi_onSlaveTransmit)();
     void (*twi_onSlaveReceive)(uint8_t*, size_t);
 
     // ETS queue/timer interfaces
@@ -135,59 +147,49 @@ private:
     ETSEvent eventTaskQueue[EVENTTASK_QUEUE_SIZE];
     ETSTimer timer;
 
-    // Event/IRQ callbacks, so they can't use "this" and need to be static
-    static void IRAM_ATTR onSclChange(void);
-    static void IRAM_ATTR onSdaChange(void);
-    static void           eventTask(ETSEvent* e);
-    static void IRAM_ATTR onTimer(void* unused);
+    // Event/IRQ callbacks must be static and thus can't use "this"
+    static void onSclChange();
+    static void onSdaChange();
+    static void eventTask(ETSEvent* e);
+    static void onTimer(void*);
 
     // Allow not linking in the slave code if there is no call to setAddress
     bool _slaveEnabled = false;
 
     // Internal use functions
-    void IRAM_ATTR busywait(unsigned int v);
-    bool           write_start(void);
-    bool           write_stop(void);
-    bool           write_bit(bool bit);
-    bool           read_bit(void);
-    bool           write_byte(unsigned char byte);
-    unsigned char  read_byte(bool nack);
-    void IRAM_ATTR onTwipEvent(uint8_t status);
+    void          busywait(unsigned int v) const;
+    bool          write_start() const;
+    bool          write_stop() const;
+    bool          write_bit(bool bit) const;
+    bool          read_bit() const;
+    bool          write_byte(unsigned char byte) const;
+    unsigned char read_byte(bool nack) const;
+    void          onTwipEvent(uint8_t status);
 
-    // Handle the case where a slave needs to stretch the clock with a time-limited busy wait
-    inline void WAIT_CLOCK_STRETCH()
+    void WAIT_CLOCK_STRETCH() const
     {
-        esp8266::polledTimeout::oneShotFastUs  timeout(twi_clockStretchLimit);
-        esp8266::polledTimeout::periodicFastUs yieldTimeout(5000);
-        while (!timeout
-               && !SCL_READ(twi_scl))  // outer loop is stretch duration up to stretch limit
-        {
-            if (yieldTimeout)  // inner loop yields every 5ms
-            {
-                yield();
-            }
-        }
+        ::WAIT_CLOCK_STRETCH(twi_clockStretchLimit, twi_scl);
     }
 
     // Generate a clock "valley" (at the end of a segment, just before a repeated start)
-    void twi_scl_valley(void);
+    void twi_scl_valley() const;
 
 public:
-    void           setClock(unsigned int freq);
-    void           setClockStretchLimit(uint32_t limit);
-    void           init(unsigned char sda, unsigned char scl);
-    void           setAddress(uint8_t address);
-    unsigned char  writeTo(unsigned char address, unsigned char* buf, unsigned int len,
+    void          setClock(unsigned int freq);
+    void          setClockStretchLimit(uint32_t limit);
+    void          init(unsigned char sda, unsigned char scl);
+    void          setAddress(uint8_t address);
+    unsigned char writeTo(unsigned char address, unsigned char* buf, unsigned int len,
+                          unsigned char sendStop);
+    unsigned char readFrom(unsigned char address, unsigned char* buf, unsigned int len,
                            unsigned char sendStop);
-    unsigned char  readFrom(unsigned char address, unsigned char* buf, unsigned int len,
-                            unsigned char sendStop);
-    uint8_t        status();
-    uint8_t        transmit(const uint8_t* data, uint8_t length);
-    void           attachSlaveRxEvent(void (*function)(uint8_t*, size_t));
-    void           attachSlaveTxEvent(void (*function)(void));
-    void IRAM_ATTR reply(uint8_t ack);
-    void IRAM_ATTR releaseBus(void);
-    void           enableSlave();
+    uint8_t       status();
+    uint8_t       transmit(const uint8_t* data, uint8_t length);
+    void          attachSlaveRxEvent(void (*function)(uint8_t*, size_t));
+    void          attachSlaveTxEvent(void (*function)());
+    void          reply(uint8_t ack);
+    void          releaseBus();
+    void          enableSlave();
 };
 
 static Twi twi;
@@ -265,7 +267,7 @@ void Twi::enableSlave()
     }
 }
 
-void IRAM_ATTR Twi::busywait(unsigned int v)
+void IRAM_ATTR Twi::busywait(unsigned int v) const
 {
     unsigned int i;
     for (i = 0; i < v; i++)  // loop time is 5 machine cycles: 31.25ns @ 160MHz, 62.5ns @ 80MHz
@@ -275,7 +277,7 @@ void IRAM_ATTR Twi::busywait(unsigned int v)
     }
 }
 
-bool Twi::write_start(void)
+bool Twi::write_start() const
 {
     SCL_HIGH(twi_scl);
     SDA_HIGH(twi_sda);
@@ -294,7 +296,7 @@ bool Twi::write_start(void)
     return true;
 }
 
-bool Twi::write_stop(void)
+bool Twi::write_stop() const
 {
     SCL_LOW(twi_scl);
     SDA_LOW(twi_sda);
@@ -308,7 +310,7 @@ bool Twi::write_stop(void)
     return true;
 }
 
-bool Twi::write_bit(bool bit)
+bool Twi::write_bit(bool bit) const
 {
     SCL_LOW(twi_scl);
     if (bit)
@@ -326,7 +328,7 @@ bool Twi::write_bit(bool bit)
     return true;
 }
 
-bool Twi::read_bit(void)
+bool Twi::read_bit() const
 {
     SCL_LOW(twi_scl);
     SDA_HIGH(twi_sda);
@@ -338,7 +340,7 @@ bool Twi::read_bit(void)
     return bit;
 }
 
-bool Twi::write_byte(unsigned char byte)
+bool Twi::write_byte(unsigned char byte) const
 {
     unsigned char bit;
     for (bit = 0; bit < 8; bit++)
@@ -349,7 +351,7 @@ bool Twi::write_byte(unsigned char byte)
     return !read_bit();  // NACK/ACK
 }
 
-unsigned char Twi::read_byte(bool nack)
+unsigned char Twi::read_byte(bool nack) const
 {
     unsigned char byte = 0;
     unsigned char bit;
@@ -447,7 +449,7 @@ unsigned char Twi::readFrom(unsigned char address, unsigned char* buf, unsigned 
     return 0;
 }
 
-void Twi::twi_scl_valley(void)
+void Twi::twi_scl_valley() const
 {
     SCL_LOW(twi_scl);
     busywait(twi_dcount);
@@ -515,15 +517,11 @@ void Twi::attachSlaveRxEvent(void (*function)(uint8_t*, size_t))
     twi_onSlaveReceive = function;
 }
 
-void Twi::attachSlaveTxEvent(void (*function)(void))
+void Twi::attachSlaveTxEvent(void (*function)())
 {
     twi_onSlaveTransmit = function;
 }
 
-// DO NOT INLINE, inlining reply() in combination with compiler optimizations causes function
-// breakup into parts and the IRAM_ATTR isn't propagated correctly to all parts, which of course
-// causes crashes.
-// TODO: test with gcc 9.x and if it still fails, disable optimization with -fdisable-ipa-fnsplit
 void IRAM_ATTR Twi::reply(uint8_t ack)
 {
     // transmit master read ready signal, with or without ack
@@ -541,7 +539,7 @@ void IRAM_ATTR Twi::reply(uint8_t ack)
     }
 }
 
-void IRAM_ATTR Twi::releaseBus(void)
+void IRAM_ATTR Twi::releaseBus()
 {
     // release bus
     // TWCR = _BV(TWEN) | _BV(TWIE) | _BV(TWEA) | _BV(TWINT);
@@ -571,11 +569,14 @@ void IRAM_ATTR Twi::onTwipEvent(uint8_t status)
         break;
     case TW_SR_DATA_ACK:        // data received, returned ack
     case TW_SR_GCALL_DATA_ACK:  // data received generally, returned ack
+    {
         // if there is still room in the rx buffer
-        if (twi_rxBufferIndex < TWI_BUFFER_LENGTH)
+        int index = twi_rxBufferIndex;
+        if (index < TWI_BUFFER_LENGTH)
         {
             // put byte in buffer and ack
-            twi_rxBuffer[twi_rxBufferIndex++] = twi_data;
+            twi_rxBuffer[index] = twi_data;
+            twi_rxBufferIndex   = index + 1;
             reply(1);
         }
         else
@@ -584,19 +585,23 @@ void IRAM_ATTR Twi::onTwipEvent(uint8_t status)
             reply(0);
         }
         break;
+    }
     case TW_SR_STOP:  // stop or repeated start condition received
+    {
         // put a null char after data if there's room
-        if (twi_rxBufferIndex < TWI_BUFFER_LENGTH)
+        int index = twi_rxBufferIndex;
+        if (index < TWI_BUFFER_LENGTH)
         {
-            twi_rxBuffer[twi_rxBufferIndex] = '\0';
+            twi_rxBuffer[index] = '\0';
         }
         // callback to user-defined callback over event task to allow for non-RAM-residing code
         // twi_rxBufferLock = true; // This may be necessary
-        ets_post(EVENTTASK_QUEUE_PRIO, TWI_SIG_RX, twi_rxBufferIndex);
+        ets_post(EVENTTASK_QUEUE_PRIO, TWI_SIG_RX, index);
 
         // since we submit rx buffer to "wire" library, we can reset it
         twi_rxBufferIndex = 0;
         break;
+    }
 
     case TW_SR_DATA_NACK:        // data received, returned nack
     case TW_SR_GCALL_DATA_NACK:  // data received generally, returned nack
@@ -620,11 +625,13 @@ void IRAM_ATTR Twi::onTwipEvent(uint8_t status)
         break;
 
     case TW_ST_DATA_ACK:  // byte sent, ack returned
+    {
         // copy data to output register
-        twi_data = twi_txBuffer[twi_txBufferIndex++];
+        int index         = twi_txBufferIndex;
+        twi_data          = twi_txBuffer[index];
+        twi_txBufferIndex = index + 1;
 
-        bitCount = 8;
-        bitCount--;
+        bitCount = 7;
         if (twi_data & 0x80)
         {
             SDA_HIGH(twi.twi_sda);
@@ -645,6 +652,7 @@ void IRAM_ATTR Twi::onTwipEvent(uint8_t status)
             reply(0);
         }
         break;
+    }
     case TW_ST_DATA_NACK:  // received nack, we are done
     case TW_ST_LAST_DATA:  // received ack, but we are done already!
         // leave slave receiver state
@@ -660,9 +668,8 @@ void IRAM_ATTR Twi::onTwipEvent(uint8_t status)
     }
 }
 
-void IRAM_ATTR Twi::onTimer(void* unused)
+void IRAM_ATTR Twi::onTimer(void*)
 {
-    (void)unused;
     twi.releaseBus();
     twi.onTwipEvent(TW_BUS_ERROR);
     twi.twip_mode  = TWIPM_WAIT;
@@ -709,7 +716,7 @@ void Twi::eventTask(ETSEvent* e)
 // Shorthand for if the state is any of the or'd bitmask x
 #define IFSTATE(x) if (twip_state_mask & (x))
 
-void IRAM_ATTR Twi::onSclChange(void)
+void IRAM_ATTR Twi::onSclChange()
 {
     unsigned int sda;
     unsigned int scl;
@@ -730,7 +737,7 @@ void IRAM_ATTR Twi::onSclChange(void)
         }
         else
         {
-            twi.bitCount--;
+            twi.bitCount -= 1;
             twi.twi_data <<= 1;
             twi.twi_data |= sda;
 
@@ -837,7 +844,7 @@ void IRAM_ATTR Twi::onSclChange(void)
         }
         else
         {
-            twi.bitCount--;
+            twi.bitCount -= 1;
             if (twi.twi_data & 0x80)
             {
                 SDA_HIGH(twi.twi_sda);
@@ -907,7 +914,7 @@ void IRAM_ATTR Twi::onSclChange(void)
     }
 }
 
-void IRAM_ATTR Twi::onSdaChange(void)
+void IRAM_ATTR Twi::onSdaChange()
 {
     unsigned int sda;
     unsigned int scl;
@@ -1003,6 +1010,8 @@ void IRAM_ATTR Twi::onSdaChange(void)
         }
     }
 }
+
+}  // namespace
 
 // C wrappers for the object, since API is exposed only as C
 extern "C"
