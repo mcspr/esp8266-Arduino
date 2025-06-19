@@ -741,7 +741,7 @@ void IRAM_ATTR Twi::onSclChange()
             twi.twi_data <<= 1;
             twi.twi_data |= sda;
 
-            if (twi.bitCount != 0)
+            if (twi.bitCount > 0)
             {
                 // continue
             }
@@ -855,7 +855,7 @@ void IRAM_ATTR Twi::onSclChange()
             }
             twi.twi_data <<= 1;
 
-            if (twi.bitCount != 0)
+            if (twi.bitCount > 0)
             {
                 // continue
             }
