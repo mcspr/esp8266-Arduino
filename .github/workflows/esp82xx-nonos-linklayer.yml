@@ -32,31 +32,25 @@ jobs:
           fetch-depth: 1
           submodules: false
 
-      - name: Initialize deploy tools
+      - name: git config
         run: |
-          mkdir ${HOME}/.ssh
-
-          echo "${{ secrets.SSH_DEPLOY_KEY }}" > ${HOME}/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
-          echo -ne "Host github.com\n\tHostname github.com\n\tIdentityFile ~/.ssh/deploy_key\n" > \
-            ${HOME}/.ssh/config
-
           pushd esp8266
           git config user.name "Maxim Prokhorov (CI)"
           git config user.email "prokhorov.max@outlook.com"
           popd
 
-      - name: Initialize build environment
+      - name: Toolchain
         run: |
           pushd esp8266/tools
-          python get.py -q
+          python get.py \
+            --no-progress \
+            --tool xtensa-lx106-elf
           popd
-
+          
       - name: Prepare lwip2 builder
         run: |
           pushd esp8266
-          git remote add deploy git@github.com:${{ github.repository }}.git
+          git remote add deploy https://github.com/${{ github.repository }}.git
           git switch -c lwip2-rebuild
           git submodule update --init -- tools/sdk/lwip2/builder
           git submodule update --remote --merge -- tools/sdk/lwip2/builder
@@ -65,6 +59,8 @@ jobs:
           popd
 
       - name: Build and deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           pushd esp8266
 
