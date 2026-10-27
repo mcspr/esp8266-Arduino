@@ -5,7 +5,8 @@ on:
 
 
 permissions:
-  contents: read
+  contents: write
+  workflows: write
 
 
 jobs:
@@ -13,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: deploy
     steps:
-      - uses: .github/actions/prepare.yml
+      - uses: ./.github/actions/prepare.yml
 
       - name: Prepare bearssl builder
         run: |
