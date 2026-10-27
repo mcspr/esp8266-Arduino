@@ -58,12 +58,12 @@ jobs:
           git commit -m 'Rebuild lwip2 libs'
 
           { echo "# git-status after build "; echo '```console'; git --no-pager status ; echo '```'; } \
-I             >> $GITHUB_STEP_SUMMARY
+             >> $GITHUB_STEP_SUMMARY
 
           echo "" >> $GITHUB_STEP_SUMMARY
 
           { echo "# git-diff after build "; echo '```diff'; git --no-pager diff ; echo '```'; } \
-I             >> $GITHUB_STEP_SUMMARY
+             >> $GITHUB_STEP_SUMMARY
 
           branch=$(date -Im | tr '[:punct:]' '_')
           git push deploy HEAD:lwip2/build-${branch}
