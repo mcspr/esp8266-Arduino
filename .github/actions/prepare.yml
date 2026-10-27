@@ -1,0 +1,41 @@
+name: Prepare esp8266 deployment
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.x'
+
+    - uses: actions/cache@v7
+      with:
+        path: |
+          esp8266/tools/dist
+          esp8266/tools/sdk/ssl/bearssl/
+          esp8266/tools/sdk/lwip2/builder/lwip2-src
+        key: ${{ runner.os }}-deploy-${{ hashFiles('esp8266/.gitmodules', 'esp8266/package/package_esp8266com_index.template.json') }}
+
+    - name: Fetch ESP8266 Core
+      uses: actions/checkout@v7
+      with:
+        path: esp8266
+        repository: esp8266/Arduino
+        fetch-depth: 1
+        submodules: false
+
+    - name: Repo git config
+      run: |
+        pushd esp8266
+        git config user.name "Maxim Prokhorov (CI)"
+        git config user.email "prokhorov.max@outlook.com"
+        git remote add gha-deploy https://github.com/${{ github.repository }}.git
+        git switch -c gha-deploy-branch
+        popd
+
+    - name: Toolchain
+      run: |
+        pushd esp8266/tools
+        python get.py \
+          --no-progress \
+          --tool xtensa-lx106-elf
+        popd
