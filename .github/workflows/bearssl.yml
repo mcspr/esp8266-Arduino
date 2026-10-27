@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: deploy
     steps:
-      - uses: ./.github/actions/prepare.yml
+      - uses: ./.github/actions/prepare
 
       - name: Prepare bearssl builder
         run: |
