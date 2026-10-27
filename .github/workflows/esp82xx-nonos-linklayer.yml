@@ -6,8 +6,8 @@ on:
 
 
 permissions:
+  actions: write
   contents: write
-  workflows: write
 
 
 jobs:
