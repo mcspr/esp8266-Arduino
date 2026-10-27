@@ -30,7 +30,7 @@ runs:
         git config user.name "Maxim Prokhorov (CI)"
         git config user.email "prokhorov.max@outlook.com"
         git remote add gha-deploy https://github.com/${{ github.repository }}.git
-        git switch -c gha-deploy-branch
+        git switch -c deploy
         popd
 
     - name: Toolchain
