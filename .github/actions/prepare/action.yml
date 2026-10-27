@@ -7,14 +7,6 @@ runs:
       with:
         python-version: '3.x'
 
-    - uses: actions/cache@v7
-      with:
-        path: |
-          esp8266/tools/dist
-          esp8266/tools/sdk/ssl/bearssl/
-          esp8266/tools/sdk/lwip2/builder/lwip2-src
-        key: ${{ runner.os }}-deploy-${{ hashFiles('esp8266/.gitmodules', 'esp8266/package/package_esp8266com_index.template.json') }}
-
     - name: Fetch ESP8266 Core
       uses: actions/checkout@v7
       with:
@@ -22,6 +14,14 @@ runs:
         repository: esp8266/Arduino
         fetch-depth: 1
         submodules: false
+
+    - uses: actions/cache@v6
+      with:
+        path: |
+          esp8266/tools/dist
+          esp8266/tools/sdk/ssl/bearssl/
+          esp8266/tools/sdk/lwip2/builder/lwip2-src
+        key: ${{ runner.os }}-deploy-${{ hashFiles('esp8266/.gitmodules', 'esp8266/package/package_esp8266com_index.template.json') }}
 
     - name: Repo git config
       shell: bash
