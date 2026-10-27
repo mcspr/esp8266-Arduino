@@ -18,6 +18,7 @@ jobs:
       - uses: ./.github/actions/prepare
 
       - name: Prepare bearssl builder
+        shell: bash
         run: |
           pushd esp8266
           git submodule update --init -- tools/sdk/ssl/bearssl
@@ -28,6 +29,7 @@ jobs:
 
       - name: Build
         id: build
+        shell: bash
         run: |
           pushd esp8266
 
@@ -43,6 +45,7 @@ jobs:
 
       - name: Deploy
         if: steps.build.outputs.deploy == 'true'
+        shell: bash
         run: |
           pushd esp8266
 

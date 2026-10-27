@@ -19,6 +19,7 @@ jobs:
       - uses: ./.github/actions/prepare
 
       - name: Prepare lwip2 builder
+        shell: bash
         run: |
           pushd esp8266
           git submodule update --init -- tools/sdk/lwip2/builder
@@ -29,6 +30,7 @@ jobs:
 
       - name: Build
         id: build
+        shell: bash
         run: |
           pushd esp8266
 
@@ -44,6 +46,7 @@ jobs:
 
       - name: Build and deploy
         if: steps.build.outputs.deploy == 'true'
+        shell: bash
         run: |
           pushd esp8266
 

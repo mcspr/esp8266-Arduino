@@ -24,6 +24,7 @@ runs:
         submodules: false
 
     - name: Repo git config
+      shell: bash
       run: |
         pushd esp8266
         git config user.name "Maxim Prokhorov (CI)"
@@ -33,6 +34,7 @@ runs:
         popd
 
     - name: Toolchain
+      shell: bash
       run: |
         pushd esp8266/tools
         python get.py \
