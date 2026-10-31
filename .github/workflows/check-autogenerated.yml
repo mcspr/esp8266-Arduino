@@ -38,7 +38,7 @@ jobs:
     - uses: actions/cache@v4
       with:
         path: ./tools/dist
-        key: ${{ runner.os }}-${{ hashFiles('package/package_esp8266com_index.template.json', 'tests/common.sh') }}
+        key: ${{ runner.os }}-${{ hashFiles('package/package_esp8266com_index.template.json', 'tests/common.sh', 'tests/build.sh') }}
     - run: |
         # ^ reuse toolchain cache from our linux build job
         git submodule update --init --remote tools/sdk/uzlib
