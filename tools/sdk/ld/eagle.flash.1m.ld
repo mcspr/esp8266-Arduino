@@ -8,9 +8,9 @@
 
 MEMORY
 {
-  dport0_0_seg :                        org = 0x3FF00000, len = 0x10
-  dram0_0_seg :                         org = 0x3FFE8000, len = 0x14000
-  irom0_0_seg :                         org = 0x40201010, len = 0xf9ff0
+  dport0_0_seg (rw) :                   org = 0x3FF00000, len = 0x10
+  dram0_0_seg (rw) :                    org = 0x3FFE8000, len = 0x14000
+  irom0_0_seg (rx) :                    org = 0x40201010, len = 0xf9ff0
 }
 
 PROVIDE ( _FS_start = 0x402FB000 );

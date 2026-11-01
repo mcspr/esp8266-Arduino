@@ -102,6 +102,7 @@ env.Append(
     LINKFLAGS=[
         "-Os",
         "-nostdlib",
+        "-Wl,--no-warn-rwx-segments",  # todo: IRAM is declared as one RWX segment
         "-Wl,--no-check-sections",
         "-Wl,-static",
         "-Wl,--gc-sections",

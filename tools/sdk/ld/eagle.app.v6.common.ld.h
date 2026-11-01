@@ -1,34 +1,38 @@
 /* This linker script generated from xt-genldscripts.tpp for LSP . */
 /* Linker Script for ld -N */
 
-/* The restriction to one MEMORY command, appears to be a restriction in
-   past versions. https://stackoverflow.com/a/55673816
-   This 2nd MEMORY command appears to work fine.
-*/
+/* Set at build-time. See -DMMU_IRAM_SIZE=... in tools/boards.txt.py and tools/platformio-build.py */
 MEMORY
 {
-  iram1_0_seg :                         org = 0x40100000, len = MMU_IRAM_SIZE
+  iram1_0_seg (rwx) : org = 0x40100000, len = MMU_IRAM_SIZE
 }
 
+/* Manually segment the output. Everything is load'able */
 PHDRS
 {
-  dport0_0_phdr PT_LOAD;
-  dram0_0_phdr PT_LOAD;
-  dram0_0_bss_phdr PT_LOAD;
-  iram1_0_phdr PT_LOAD;
-  irom0_0_phdr PT_LOAD;
+  dport0_0_phdr PT_LOAD FLAGS(6) ; /* ____ | PF_W | PF_R */
+  dram0_0_phdr PT_LOAD FLAGS(6) ; /* ____ | PF_W | PF_R */
+  dram0_0_bss_phdr PT_LOAD FLAGS(6) ; /* ____ | PF_W | PF_R */
+  iram1_0_phdr PT_LOAD FLAGS(7) ; /* PF_X | PF_W | PF_R */
+  irom0_0_phdr PT_LOAD FLAGS(5) ; /* PF_X | PF_W | ____ */
 }
 
 
-/*  Default entry point:  */
+/*  Default entry point  */
 ENTRY(app_entry)
+
+/*  Exception vectors  */
 EXTERN(_DebugExceptionVector)
 EXTERN(_DoubleExceptionVector)
 EXTERN(_KernelExceptionVector)
 EXTERN(_NMIExceptionVector)
 EXTERN(_UserExceptionVector)
+
+/* see core_esp8266_main.cpp, usually stored to .ver_number */
 EXTERN(core_version)
+
 PROVIDE(_memmap_vecbase_reset = 0x40000000);
+
 /* Various memory-map dependent cache attribute settings: */
 _memmap_cacheattr_wb_base = 0x00000110;
 _memmap_cacheattr_wt_base = 0x00000110;
@@ -154,7 +158,7 @@ SECTIONS
 
   } >iram1_0_seg :iram1_0_phdr
 
-  .irom0.text : ALIGN(4)
+  .irom0.text (READONLY) : ALIGN(4)
   {
     _irom0_text_start = ABSOLUTE(.);
 
@@ -267,8 +271,6 @@ SECTIONS
     _irom0_text_end = ABSOLUTE(.);
     _flash_code_end = ABSOLUTE(.);
   } >irom0_0_seg :irom0_0_phdr
-
-
 
   .text1 : ALIGN(4)
   {

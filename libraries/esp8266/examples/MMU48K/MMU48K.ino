@@ -23,10 +23,21 @@ short *unaligned_probe_s = NULL;
 uint32_t read_var = 0x11223344;
 
 /*
-  Notes,
   When accessing IRAM as data storage all access must be word aligned and
   full word length.
 
+  Since IRAM memory segment is allowed to store all kinds of data,
+  ld would show currently unavoidable warning when dealing w/ variables
+  > xtensa-lx106-elf/bin/ld: warning: firmware.elf has a LOAD segment with RWX permissions
+
+  This could be silenced in a couple of ways
+  - by using -Wl,--no-warn-rwx-segments, which simply removes the warning
+  - modifying linker script MEMORY mapping and splitting RX and RW.
+    note that while we provide a way to store heap data in IRAM,
+    this is not enabled by default and NOT reflected in the ld script
+  - (workaround-ish) assigning .rodata & .data a readonly section output.
+    this also requires elf2bin modifications, as we don't differentiate
+    types of data that are stored in the IRAM sections (.text, text1)
 */
 
 #if defined(MMU_IRAM_HEAP) || defined(MMU_SEC_HEAP)
