@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 root=$(git rev-parse --show-toplevel)
-${CC:-xtensa-lx106-elf-gcc} --help=warnings -Q |\
+${CC:-xtensa-lx106-elf-gcc} -xc++ -Q --help=warnings /dev/null |\
     grep '\[enabled\]' |\
     grep -v 'return-type' |\
     awk '{print $1}' |\
