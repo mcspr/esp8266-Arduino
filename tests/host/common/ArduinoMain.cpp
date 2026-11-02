@@ -30,6 +30,7 @@
 */
 
 #include <Arduino.h>
+#include <Schedule.h>
 #include <user_interface.h>  // wifi_get_ip_info()
 
 #include <signal.h>
@@ -305,6 +306,8 @@ int main(int argc, char* const argv[])
     // first call to millis(): now is millis() and micros() beginning
     millis();
 
+    schedule_recurrent_function_us([](){ check_incoming_udp(); return true; }, 1000);
+
     setup();
     while (!user_exit)
     {
@@ -316,7 +319,6 @@ int main(int argc, char* const argv[])
             usleep(1000);  // not 100% cpu, ~1000 loops per second
         loop();
         loop_end();
-        check_incoming_udp();
 
         if (run_once)
             user_exit = true;
