@@ -16,28 +16,29 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: builder/deploy
           path: builder
 
       - uses: actions/checkout@v7
         with:
           path: newlib-xtensa-4.0.0
           repository: earlephilhower/newlib-xtensa
-          branch: xtensa-4_0_0-lock-arduino
+          ref: xtensa-4_0_0-lock-arduino
           submodules: false
-          depth: 1
+          fetch-depth: 1
 
       - uses: actions/checkout@v7
         with:
           path: newlib-xtensa
           repository: mcspr/newlib-xtensa
-          branch: xtensa-4_5_0-lock-arduino
+          ref: xtensa-4_5_0-lock-arduino
           submodules: false
-          depth: 1
+          fetch-depth: 1
 
       - name: Toolchains
         run: |
-          mkdir -p $HOME/toolchain/
-          pushd $HOME/toolchain/
+          mkdir -p toolchain/
+          pushd toolchain/
 
           for fremote in "package/package_esp8266com_index.template.json" "tools/get.py" ; do
             flocal="${fremote##*/}"
@@ -62,8 +63,8 @@ jobs:
                 mkdir ${system}.${bits}
                 mv xtensa-lx106-elf ${platform}.${bits}/
 
-                bash $HOME/builder/.github/scripts/uninstall_newlib.sh \
-                  "$HOME/newlib-xtensa-4.0.0" \
+                bash ${GITHUB_WORKSPACE}/builder/.github/scripts/uninstall_newlib.sh \
+                  "${GITHUB_WORKSPACE}/newlib-xtensa-4.0.0" \
                   "${system}.${bits}/xtensa-lx106-elf"
               fi
             done
@@ -74,8 +75,8 @@ jobs:
       - name: Patch newlib
         run: |
           # quickfix from the current snapshot of esp-quick-toolchain
-          pushd $HOME/newlib-xtensa
-          patch -p1 < $HOME/repo/.github/patches/newlib-4.5.0.patch
+          pushd newlib-xtensa
+          patch -p1 < ${GITHUB_WORKSPACE}/builder/.github/patches/newlib-4.5.0.patch
           popd
 
       - name: Build newlib
@@ -84,11 +85,11 @@ jobs:
           mkdir build_newlib-xtensa
           pushd build_newlib-xtensa
 
-          export PATH="$HOME/toolchain/Linux.64/xtensa-lx106-elf/bin:${PATH}"
+          export PATH="${GITHUB_WORKSPACE}/toolchain/Linux.64/xtensa-lx106-elf/bin:${PATH}"
           export CFLAGS_FOR_TARGET=-Os -g -mlongcalls -free -fipa-pta
-          $HOME/newlib-xtensa/configure \
+          ${GITHUB_WORKSPACE}/newlib-xtensa/configure \
             --target=xtensa-lx106-elf \
-            --prefix=$HOME/toolchain/Linux.64/xtensa-lx106-elf/ \
+            --prefix=${GITHUB_WORKSPACE}/toolchain/Linux.64/xtensa-lx106-elf/ \
             --disable-newlib-supplied-syscalls \
             --disable-newlib-wide-orient \
             --disable-option-checking \
@@ -110,8 +111,8 @@ jobs:
 
           for system in Darwin Linux LinuxARM Windows ; do
             for bits in 32 64 ; do
-              if test -d $HOME/toolchain/"${system}.${bits}"/xtensa-lx106-elf ; then
-                make DESTDIR="$HOME/toolchain/${system}.${bits}"/xtensa-lx106-elf install
+              if test -d ${GITHUB_WORKSPACE}/toolchain/"${system}.${bits}"/xtensa-lx106-elf ; then
+                make DESTDIR="${GITHUB_WORKSPACE}/toolchain/${system}.${bits}"/xtensa-lx106-elf install
               fi
             done
           done
@@ -121,14 +122,14 @@ jobs:
       - name: Repackage
         shell: bash
         run: |
-          mkdir $HOME/packages
-          pushd $HOME/toolchain
+          mkdir packages
+          pushd toolchain
 
           for system in Darwin Linux LinuxARM Windows ; do
             for bits in 32 64 ; do
               if test -d "${system}.${bits}"/xtensa-lx106-elf ; then
                 pushd "${system}.${bits}"
-                tar --xz -c -f $HOME/packages/"${system}.${bits}".txz xtensa-lx106-elf/
+                tar --xz -c -f ${GITHUB_WORKSPACE}/packages/"${system}.${bits}".txz xtensa-lx106-elf/
                 popd
               fi
             done
