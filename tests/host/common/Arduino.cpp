@@ -13,37 +13,29 @@
  all copies or substantial portions of the Software.
 */
 
-#include <sys/time.h>
-#include <unistd.h>
-
-#include <functional>
-
 #include <Arduino.h>
 #include <Schedule.h>
 
-static struct timeval gtod0 = { 0, 0 };
+#include <functional>
+#include <chrono>
+#include <thread>
+
+#include <unistd.h>
+
+using clock_type = std::chrono::steady_clock;
 
 extern "C" unsigned long millis()
 {
-    timeval time;
-    gettimeofday(&time, NULL);
-    if (gtod0.tv_sec == 0)
-        memcpy(&gtod0, &time, sizeof gtod0);
-    return ((time.tv_sec - gtod0.tv_sec) * 1000) + ((time.tv_usec - gtod0.tv_usec) / 1000);
+    const auto since_epoch = clock_type::now().time_since_epoch();
+    const auto out = std::chrono::duration_cast<std::chrono::milliseconds>(since_epoch);
+    return out.count();
 }
 
 extern "C" unsigned long micros()
 {
-    timeval time;
-    gettimeofday(&time, NULL);
-    if (gtod0.tv_sec == 0)
-        memcpy(&gtod0, &time, sizeof gtod0);
-    return ((time.tv_sec - gtod0.tv_sec) * 1000000) + time.tv_usec - gtod0.tv_usec;
-}
-
-extern "C" void yield()
-{
-    run_scheduled_recurrent_functions();
+    const auto since_epoch = clock_type::now().time_since_epoch();
+    const auto out = std::chrono::duration_cast<std::chrono::microseconds>(since_epoch);
+    return out.count();
 }
 
 extern "C" void loop_end()
@@ -57,20 +49,53 @@ extern "C" bool can_yield()
     return true;
 }
 
+static std::chrono::steady_clock::time_point last_yield{};
+
 extern "C" void optimistic_yield(uint32_t interval_us)
 {
-    (void)interval_us;
+    const auto clock_now = clock_type::now();
+    if (clock_now - last_yield > std::chrono::microseconds(interval_us))
+    {
+        last_yield = clock_now;
+        esp_yield();
+    }
 }
 
-extern "C" void esp_suspend() { }
+extern "C" void esp_suspend_within_cont() {
+    run_scheduled_recurrent_functions();
+}
+
+extern "C" void esp_suspend() {
+    esp_suspend_within_cont();
+}
 
 extern "C" void esp_schedule() { }
 
-extern "C" void esp_yield() { }
+extern "C" void esp_yield() {
+    esp_schedule();
+    esp_suspend();
+}
+
+extern "C" void yield()
+{
+    esp_yield();
+}
 
 extern "C" void esp_delay(unsigned long ms)
 {
-    usleep(ms * 1000);
+    constexpr auto every_ms = std::chrono::milliseconds(14);  // no events to poll, just some small-ish value
+
+    auto now = clock_type::now();
+    const auto end = now + std::chrono::milliseconds(ms);
+
+    decltype(now) wake_at;
+    do
+    {
+      wake_at = now + every_ms;
+      esp_yield();
+      std::this_thread::sleep_until(wake_at);
+      now = clock_type::now();
+    } while (now < end);
 }
 
 bool esp_try_delay(const uint32_t start_ms, const uint32_t timeout_ms, const uint32_t intvl_ms)

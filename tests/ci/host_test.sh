@@ -2,7 +2,7 @@
 #
 # CI job for running tests on the host
 
-set -ev
+set -ex
 
 root=$(git rev-parse --show-toplevel)
 cd $root/tests/host
@@ -16,7 +16,15 @@ for i in ../../libraries/ESP8266WiFi/examples/WiFiClient/WiFiClient \
 	../../libraries/LittleFS/examples/SpeedTest/SpeedTest \
 	../../libraries/DNSServer/examples/DNSServer/DNSServer ; do
 	make -j2 D=1 FORCE32=0 $i
-	valgrind --leak-check=full --track-origins=yes --error-limit=no --show-leak-kinds=all --error-exitcode=999 bin/$(basename $i)/$(basename $i) -1
+	valgrind \
+        --leak-check=full \
+        --track-origins=yes \
+        --error-limit=no \
+        --show-leak-kinds=all \
+        --error-exitcode=999 \
+        --default-suppressions=yes \
+        --suppressions=$root/tests/host/valgrind/still_reachable.supp \
+        bin/$(basename $i)/$(basename $i) -1
 done
 
 make -j2 CI

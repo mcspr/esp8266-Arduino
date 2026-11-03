@@ -1,0 +1,33 @@
+{
+   Ignore recurrent function new
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:_ZnwmRKSt9nothrow_t
+   fun:_Z30schedule_recurrent_function_usRKSt8functionIFbvEEjS3_
+}
+
+{
+   Ignore uart_init malloc
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:uart_init
+}
+
+{
+   system - ignore malloc replacements
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   ...
+   fun:_dl_catch_error
+}
+
+{
+   system - ignore calloc replacements
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:calloc
+   ...
+   fun:_dl_catch_error
+}
