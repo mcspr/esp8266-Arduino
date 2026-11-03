@@ -64,9 +64,15 @@ jobs:
                 mkdir ${system}.${bits}
                 mv xtensa-lx106-elf ${system}.${bits}/
 
+                # root directory contains platform header
                 bash ${GITHUB_WORKSPACE}/builder/.github/scripts/uninstall_newlib.sh \
                   "${GITHUB_WORKSPACE}/newlib-xtensa-4.0.0" \
                   "${system}.${bits}/xtensa-lx106-elf"
+
+                # everything else is under target prefix
+                bash ${GITHUB_WORKSPACE}/builder/.github/scripts/uninstall_newlib.sh \
+                  "${GITHUB_WORKSPACE}/newlib-xtensa-4.0.0" \
+                  "${system}.${bits}/xtensa-lx106-elf/xtensa-lx106-elf"
               fi
             done
           done
@@ -87,7 +93,7 @@ jobs:
           pushd build_newlib-xtensa
 
           export PATH="${GITHUB_WORKSPACE}/toolchain/Linux.64/xtensa-lx106-elf/bin:${PATH}"
-          export CFLAGS_FOR_TARGET=-Os -g -mlongcalls -free -fipa-pta
+          export CFLAGS_FOR_TARGET="-Os -g -mlongcalls -free -fipa-pta"
           ${GITHUB_WORKSPACE}/newlib-xtensa/configure \
             --target=xtensa-lx106-elf \
             --prefix=${GITHUB_WORKSPACE}/toolchain/Linux.64/xtensa-lx106-elf/ \
