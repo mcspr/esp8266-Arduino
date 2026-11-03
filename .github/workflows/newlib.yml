@@ -119,7 +119,7 @@ jobs:
           for system in Darwin Linux LinuxARM Windows ; do
             for bits in 32 64 ; do
               if test -d ${GITHUB_WORKSPACE}/toolchain/"${system}.${bits}"/xtensa-lx106-elf ; then
-                make DESTDIR="${GITHUB_WORKSPACE}/toolchain/${system}.${bits}"/xtensa-lx106-elf install
+                make PREFIX="${GITHUB_WORKSPACE}/toolchain/${system}.${bits}"/xtensa-lx106-elf/ install
               fi
             done
           done
@@ -136,7 +136,7 @@ jobs:
             for bits in 32 64 ; do
               if test -d "${system}.${bits}"/xtensa-lx106-elf ; then
                 pushd "${system}.${bits}"
-                tar --xz -c -f ${GITHUB_WORKSPACE}/packages/"${system}.${bits}".txz xtensa-lx106-elf/
+                tar --xz -c -f ${GITHUB_WORKSPACE}/packages/"${system}.${bits}.txz" xtensa-lx106-elf/
                 popd
               fi
             done
