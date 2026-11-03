@@ -36,6 +36,7 @@ jobs:
           fetch-depth: 1
 
       - name: Toolchains
+        shell: bash
         run: |
           mkdir -p toolchain/
           pushd toolchain/
@@ -61,7 +62,7 @@ jobs:
                 --tool xtensa-lx106-elf
               if test -d xtensa-lx106-elf; then
                 mkdir ${system}.${bits}
-                mv xtensa-lx106-elf ${platform}.${bits}/
+                mv xtensa-lx106-elf ${system}.${bits}/
 
                 bash ${GITHUB_WORKSPACE}/builder/.github/scripts/uninstall_newlib.sh \
                   "${GITHUB_WORKSPACE}/newlib-xtensa-4.0.0" \
