@@ -86,9 +86,11 @@ jobs:
           patch -p1 < ${GITHUB_WORKSPACE}/builder/.github/patches/newlib-4.5.0.patch
           popd
 
-      - name: Build newlib
+      - name: Build & install newlib
         shell: bash
         run: |
+          test -d ${GITHUB_WORKSPACE}/toolchain/Linux.64/xtensa-lx106-elf
+
           mkdir build_newlib-xtensa
           pushd build_newlib-xtensa
 
@@ -108,13 +110,7 @@ jobs:
             --enable-target-optspace \
             --with-newlib \
             --without-libgloss
-
-          popd
-
-      - name: Install newlib
-        shell: bash
-        run: |
-          pushd build_newlib-xtensa
+          make -j$(nproc)
 
           for system in Darwin Linux LinuxARM Windows ; do
             for bits in 32 64 ; do
