@@ -1,0 +1,143 @@
+name: Repackage legacy newlib
+
+on:
+  workflow_dispatch:
+
+
+permissions:
+  actions: write
+  contents: write
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment: deploy
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          path: builder
+
+      - uses: actions/checkout@v7
+        with:
+          path: newlib-xtensa-4.0.0
+          repository: earlephilhower/newlib-xtensa
+          branch: xtensa-4_0_0-lock-arduino
+          submodules: false
+          depth: 1
+
+      - uses: actions/checkout@v7
+        with:
+          path: newlib-xtensa
+          repository: mcspr/newlib-xtensa
+          branch: xtensa-4_5_0-lock-arduino
+          submodules: false
+          depth: 1
+
+      - name: Toolchains
+        run: |
+          mkdir -p $HOME/toolchain/
+          pushd $HOME/toolchain/
+
+          for fremote in "package/package_esp8266com_index.template.json" "tools/get.py" ; do
+            flocal="${fremote##*/}"
+            curl \
+              -H "Authorization: Bearer ${{ github.token }}" \
+              -H "Accept: application/vnd.github.VERSION.raw" \
+              -o "$flocal" \
+              https://api.github.com/repos/esp8266/Arduino/contents/$fremote
+          done
+
+          # w/ current tree DarwinARM is the same as Darwin
+          for system in Darwin Linux LinuxARM Windows ; do
+            for bits in 32 64 ; do
+              python get.py \
+                --no-progress \
+                --system $system \
+                --platform '' \
+                --bits $bits \
+                --package-index-json package_esp8266com_index.template.json \
+                --tool xtensa-lx106-elf
+              if test -d xtensa-lx106-elf; then
+                mkdir ${system}.${bits}
+                mv xtensa-lx106-elf ${platform}.${bits}/
+
+                bash $HOME/builder/.github/scripts/uninstall_newlib.sh \
+                  "$HOME/newlib-xtensa-4.0.0" \
+                  "${system}.${bits}/xtensa-lx106-elf"
+              fi
+            done
+          done
+
+          popd
+
+      - name: Patch newlib
+        run: |
+          # quickfix from the current snapshot of esp-quick-toolchain
+          pushd $HOME/newlib-xtensa
+          patch -p1 < $HOME/repo/.github/patches/newlib-4.5.0.patch
+          popd
+
+      - name: Build newlib
+        shell: bash
+        run: |
+          mkdir build_newlib-xtensa
+          pushd build_newlib-xtensa
+
+          export PATH="$HOME/toolchain/Linux.64/xtensa-lx106-elf/bin:${PATH}"
+          export CFLAGS_FOR_TARGET=-Os -g -mlongcalls -free -fipa-pta
+          $HOME/newlib-xtensa/configure \
+            --target=xtensa-lx106-elf \
+            --prefix=$HOME/toolchain/Linux.64/xtensa-lx106-elf/ \
+            --disable-newlib-supplied-syscalls \
+            --disable-newlib-wide-orient \
+            --disable-option-checking \
+            --disable-shared \
+            --enable-multilib \
+            --enable-newlib-io-c99-formats \
+            --enable-newlib-nano-formatted-io \
+            --enable-newlib-reent-small \
+            --enable-target-optspace \
+            --with-newlib \
+            --without-libgloss
+
+          popd
+
+      - name: Install newlib
+        shell: bash
+        run: |
+          pushd build_newlib-xtensa
+
+          for system in Darwin Linux LinuxARM Windows ; do
+            for bits in 32 64 ; do
+              if test -d $HOME/toolchain/"${system}.${bits}"/xtensa-lx106-elf ; then
+                make DESTDIR="$HOME/toolchain/${system}.${bits}"/xtensa-lx106-elf install
+              fi
+            done
+          done
+
+          popd
+
+      - name: Repackage
+        shell: bash
+        run: |
+          mkdir $HOME/packages
+          pushd $HOME/toolchain
+
+          for system in Darwin Linux LinuxARM Windows ; do
+            for bits in 32 64 ; do
+              if test -d "${system}.${bits}"/xtensa-lx106-elf ; then
+                pushd "${system}.${bits}"
+                tar --xz -c -f $HOME/packages/"${system}.${bits}".txz xtensa-lx106-elf/
+                popd
+              fi
+            done
+          done
+
+          popd
+
+      - uses: actions/upload-artifact@v7
+        with:
+          compression-level: 0
+          name: packages
+          path: packages/*.txz
