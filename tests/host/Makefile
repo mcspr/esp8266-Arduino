@@ -400,7 +400,7 @@ else
 LIBSSL = $(LIBSSLFILE)
 endif
 ssl:							# download source and build BearSSL
-	cd ../../tools/sdk/ssl && $(MAKE) native$(N32)
+	cd ../../tools/sdk/ssl && $(MAKE) CONF=Unix$(N32) all
 
 ULIBPATHS = $(shell echo $(ULIBDIRS) | sed 's,:, ,g')
 USERLIBDIRS = $(shell test -z "$(ULIBPATHS)" || for d in $(ULIBPATHS); do for dd in $$d $$d/utility $$d/src $$d/src/utility; do test -d $$dd && echo $$dd; done; done)
